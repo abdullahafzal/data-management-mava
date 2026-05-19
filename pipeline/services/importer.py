@@ -6,8 +6,9 @@ import pandas as pd
 
 
 SUPPORTED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
-PREVIEW_ROW_LIMIT = 25
 PREVIEW_CELL_MAX_LEN = 120
+# Cap only for extremely large files (browser performance). 0 = no cap (show all).
+PREVIEW_ROW_CAP = 0
 
 
 def _read_dataframe(file_path: str | Path) -> pd.DataFrame:
@@ -30,10 +31,10 @@ def _truncate_cell(value, max_len: int = PREVIEW_CELL_MAX_LEN) -> str:
 def preview_upload(
     file_path: str | Path,
     *,
-    max_rows: int = PREVIEW_ROW_LIMIT,
+    max_rows: int | None = None,
 ) -> dict:
     """
-    First rows of an Outscraper export for on-page preview.
+    Outscraper export for on-page preview (all rows by default).
     Returns headers, row values (strings), and truncation flags.
     """
     path = Path(file_path)
@@ -44,7 +45,14 @@ def preview_upload(
     df = _read_dataframe(path).fillna('')
     total_rows = len(df)
     total_columns = len(df.columns)
-    sample = df.head(max_rows)
+
+    cap = max_rows if max_rows is not None else PREVIEW_ROW_CAP
+    if cap and cap > 0:
+        sample = df.head(cap)
+        truncated_rows = total_rows > cap
+    else:
+        sample = df
+        truncated_rows = False
 
     headers = [str(c) for c in sample.columns.tolist()]
     rows = [
@@ -58,7 +66,7 @@ def preview_upload(
         'preview_rows': len(sample),
         'total_rows': total_rows,
         'total_columns': total_columns,
-        'truncated_rows': total_rows > max_rows,
+        'truncated_rows': truncated_rows,
     }
 
 

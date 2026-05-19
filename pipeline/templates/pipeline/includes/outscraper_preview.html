@@ -3,8 +3,12 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
     <p class="small fw-semibold mb-0">Outscraper data preview</p>
     <span class="small text-muted">
+      {% if preview.truncated_rows %}
       Showing {{ preview.preview_rows }} of {{ preview.total_rows }} rows
-      · {{ preview.total_columns }} columns
+      {% else %}
+      {{ preview.total_rows }} row{{ preview.total_rows|pluralize }}
+      {% endif %}
+      · {{ preview.total_columns }} column{{ preview.total_columns|pluralize }}
     </span>
   </div>
   <div class="table-preview-wrap">

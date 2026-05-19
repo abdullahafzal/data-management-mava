@@ -329,7 +329,7 @@ body {
 
 .import-preview .table-preview-wrap {
   overflow: auto;
-  max-height: 28rem;
+  max-height: min(70vh, 48rem);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
