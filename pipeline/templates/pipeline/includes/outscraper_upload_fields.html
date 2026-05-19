@@ -1,0 +1,181 @@
+{# Outscraper filters — mirrors Google Maps scraper form #}
+<p class="text-muted small mb-3">
+  Record the exact settings you used in Outscraper before exporting. We use these for
+  <strong>import history</strong> and to warn if you already paid for the same scrape.
+</p>
+
+<div class="outscraper-filters-panel mb-3">
+  <p class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:0.04em">Outscraper filters</p>
+
+  {# Categories #}
+  <div class="filter-block mb-4">
+    <label class="form-label fw-semibold" for="{{ upload_form.outscraper_category.id_for_label }}">
+      <span class="text-danger">*</span> {{ upload_form.outscraper_category.label }}
+    </label>
+    {{ upload_form.outscraper_category }}
+    {% if upload_form.outscraper_category.help_text %}
+    <div class="form-text">{{ upload_form.outscraper_category.help_text }}</div>
+    {% endif %}
+    {% if upload_form.outscraper_category.errors %}
+    <div class="text-danger small">{{ upload_form.outscraper_category.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  {# Locations #}
+  <div class="filter-block mb-4">
+    <label class="form-label fw-semibold" for="{{ upload_form.outscraper_location.id_for_label }}">
+      <span class="text-danger">*</span> {{ upload_form.outscraper_location.label }}
+      <i class="bi bi-info-circle text-muted ms-1" title="Same as Outscraper Locations"></i>
+    </label>
+    {{ upload_form.outscraper_location }}
+    {% if upload_form.outscraper_location.help_text %}
+    <div class="form-text">{{ upload_form.outscraper_location.help_text }}</div>
+    {% endif %}
+    {% if upload_form.outscraper_location.errors %}
+    <div class="text-danger small">{{ upload_form.outscraper_location.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  {# Max results #}
+  <div class="filter-block mb-4">
+    <label class="form-label fw-semibold" for="{{ upload_form.outscraper_max_results.id_for_label }}">
+      {{ upload_form.outscraper_max_results.label }}
+      <span class="text-muted fw-normal small">(0 = unlimited)</span>
+    </label>
+    {{ upload_form.outscraper_max_results }}
+    {% if upload_form.outscraper_max_results.help_text %}
+    <div class="form-text">{{ upload_form.outscraper_max_results.help_text }}</div>
+    {% endif %}
+    {% if upload_form.outscraper_max_results.errors %}
+    <div class="text-danger small">{{ upload_form.outscraper_max_results.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  {# Enrichment services #}
+  <div class="filter-block mb-3">
+    <label class="form-label fw-semibold">{{ upload_form.outscraper_services.label }}</label>
+    {{ upload_form.outscraper_services }}
+    {% if upload_form.outscraper_services.help_text %}
+    <div class="form-text">{{ upload_form.outscraper_services.help_text }}</div>
+    {% endif %}
+    {% if upload_form.outscraper_services.errors %}
+    <div class="text-danger small">{{ upload_form.outscraper_services.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  {# Advanced parameters (collapsible) #}
+  <details class="enrichment-panel mb-2">
+    <summary class="small fw-semibold">Advanced parameters</summary>
+    <div class="enrichment-body pt-3">
+      <div class="filter-block mb-4">
+        <label class="form-label fw-semibold">{{ upload_form.outscraper_quick_filters.label }}</label>
+        {{ upload_form.outscraper_quick_filters }}
+        {% if upload_form.outscraper_quick_filters.errors %}
+        <div class="text-danger small">{{ upload_form.outscraper_quick_filters.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label fw-semibold" for="{{ upload_form.outscraper_language.id_for_label }}">
+            {{ upload_form.outscraper_language.label }}
+          </label>
+          {{ upload_form.outscraper_language }}
+        </div>
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label fw-semibold" for="{{ upload_form.outscraper_places_per_query.id_for_label }}">
+            {{ upload_form.outscraper_places_per_query.label }}
+          </label>
+          {{ upload_form.outscraper_places_per_query }}
+          {% if upload_form.outscraper_places_per_query.help_text %}
+          <div class="form-text">{{ upload_form.outscraper_places_per_query.help_text }}</div>
+          {% endif %}
+        </div>
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label fw-semibold" for="{{ upload_form.outscraper_skip.id_for_label }}">
+            {{ upload_form.outscraper_skip.label }}
+          </label>
+          {{ upload_form.outscraper_skip }}
+          {% if upload_form.outscraper_skip.help_text %}
+          <div class="form-text">{{ upload_form.outscraper_skip.help_text }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap gap-4 mb-2">
+        <div class="form-check">
+          {{ upload_form.outscraper_delete_duplicates }}
+          <label class="form-check-label" for="{{ upload_form.outscraper_delete_duplicates.id_for_label }}">
+            {{ upload_form.outscraper_delete_duplicates.label }}
+          </label>
+        </div>
+        <div class="form-check">
+          {{ upload_form.outscraper_use_zip_codes }}
+          <label class="form-check-label" for="{{ upload_form.outscraper_use_zip_codes.id_for_label }}">
+            {{ upload_form.outscraper_use_zip_codes.label }}
+          </label>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  {# Other parameters (collapsible) #}
+  <details class="enrichment-panel">
+    <summary class="small fw-semibold">Other parameters <span class="text-muted fw-normal">(result format, task tags)</span></summary>
+    <div class="enrichment-body pt-3">
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="{{ upload_form.outscraper_task_title.id_for_label }}">
+          {{ upload_form.outscraper_task_title.label }}
+        </label>
+        {{ upload_form.outscraper_task_title }}
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="{{ upload_form.outscraper_result_extension.id_for_label }}">
+            {{ upload_form.outscraper_result_extension.label }}
+          </label>
+          {{ upload_form.outscraper_result_extension }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="{{ upload_form.extra_tags.id_for_label }}">
+            {{ upload_form.extra_tags.label }}
+          </label>
+          {{ upload_form.extra_tags }}
+          {% if upload_form.extra_tags.help_text %}
+          <div class="form-text">{{ upload_form.extra_tags.help_text }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mb-0">
+        <label class="form-label fw-semibold" for="{{ upload_form.outscraper_columns_to_return.id_for_label }}">
+          {{ upload_form.outscraper_columns_to_return.label }}
+          <span class="text-muted fw-normal small">(all if not selected)</span>
+        </label>
+        {{ upload_form.outscraper_columns_to_return }}
+        {% if upload_form.outscraper_columns_to_return.help_text %}
+        <div class="form-text">{{ upload_form.outscraper_columns_to_return.help_text }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </details>
+</div>
+
+<hr class="my-3">
+
+<p class="small fw-semibold text-uppercase text-muted mb-2" style="letter-spacing:0.04em">Your export file</p>
+<div class="mb-3">
+  <label class="form-label fw-semibold" for="{{ upload_form.original_file.id_for_label }}">
+    <span class="text-danger">*</span> {{ upload_form.original_file.label }}
+  </label>
+  {{ upload_form.original_file }}
+  {% if upload_form.original_file.help_text %}
+  <div class="form-text">{{ upload_form.original_file.help_text }}</div>
+  {% endif %}
+  {% if upload_form.original_file.errors %}
+  <div class="text-danger small">{{ upload_form.original_file.errors.0 }}</div>
+  {% endif %}
+</div>
+
+{{ upload_form.confirm_duplicate }}

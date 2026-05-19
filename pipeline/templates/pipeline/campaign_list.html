@@ -1,0 +1,50 @@
+{% extends "pipeline/base.html" %}
+{% load pipeline_extras %}
+{% block title %}Campaigns — Data Management{% endblock %}
+{% block content %}
+<header class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <h1>Campaigns</h1>
+    <p class="lead">Manage Outscraper imports, cleaning, and verification workflows.</p>
+  </div>
+  <a href="{% url 'pipeline:campaign_create' %}" class="btn btn-app-primary">
+    <i class="bi bi-plus-lg me-1"></i> New campaign
+  </a>
+</header>
+
+{% if campaigns %}
+<div class="campaign-grid">
+  {% for campaign in campaigns %}
+  <a href="{% url 'pipeline:campaign_detail' pk=campaign.pk %}" class="campaign-card">
+    <div class="d-flex justify-content-between align-items-start gap-2">
+      <h2 class="campaign-card-title">{{ campaign.name }}</h2>
+      {% if campaign.is_automatic %}
+      <span class="badge-mode-auto">Automatic</span>
+      {% else %}
+      <span class="badge-mode-manual">Manual</span>
+      {% endif %}
+    </div>
+    {% if campaign.niche or campaign.location %}
+    <p class="campaign-card-meta mb-0">
+      <i class="bi bi-geo-alt me-1"></i>
+      {{ campaign.niche }}{% if campaign.niche and campaign.location %} · {% endif %}{{ campaign.location|location_display }}
+    </p>
+    {% endif %}
+    <div class="campaign-card-footer">
+      <span><i class="bi bi-file-earmark-spreadsheet me-1"></i>{{ campaign.imports.count }} import{{ campaign.imports.count|pluralize }}</span>
+      <span class="text-primary">Open <i class="bi bi-arrow-right"></i></span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-app">
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="bi bi-folder2-open"></i></div>
+    <h2 class="h5 text-dark">No campaigns yet</h2>
+    <p class="mb-4">Create a campaign to upload Outscraper data and run automatic or manual processing.</p>
+    <a href="{% url 'pipeline:campaign_create' %}" class="btn btn-app-primary">Create first campaign</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

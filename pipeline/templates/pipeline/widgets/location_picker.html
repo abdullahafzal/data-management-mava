@@ -1,0 +1,37 @@
+<div class="location-picker" data-location-picker
+     data-suggest-url="{% url 'pipeline:location_suggest' %}"
+     data-record-url="{% url 'pipeline:location_record' %}">
+  <div class="location-picker-row">
+    <select class="form-select location-picker-country" data-country aria-label="Country">
+      {% for code, label in widget.countries %}
+      <option value="{{ code }}" {% if widget.country == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="location-picker-tags-wrap picker-input-wrap" data-tags-wrap>
+      <div class="location-picker-tags" data-tags role="list"></div>
+      <input type="text" class="location-picker-input" data-tag-input
+             placeholder="Type state, city, or region…" autocomplete="off" aria-label="Add location">
+      <div class="picker-dropdown" data-dropdown hidden></div>
+    </div>
+  </div>
+
+  <div class="location-picker-hint small text-muted mt-1" data-hint>
+    Type to search · click a suggestion to add a pill · new entries are saved for next time
+  </div>
+
+  <div class="form-check mt-2">
+    <input class="form-check-input" type="checkbox" id="{{ widget.name }}_custom" data-custom
+           {% if widget.custom %}checked{% endif %}>
+    <label class="form-check-label small" for="{{ widget.name }}_custom">Custom locations</label>
+  </div>
+
+  <div class="location-picker-custom mt-2 {% if not widget.custom %}d-none{% endif %}" data-custom-panel>
+    <textarea class="form-control" rows="2" data-custom-input
+              placeholder="e.g. Westchester, NY or Los Angeles, CA">{{ widget.custom_text }}</textarea>
+    <div class="form-text">Free text — autocomplete still suggests saved locations.</div>
+  </div>
+
+  <input type="hidden" name="{{ widget.name }}" id="{{ widget.attrs.id|default:widget.name }}"
+         value="{{ widget.value }}" data-value>
+</div>
+{{ widget.regions_json|json_script:"location-regions-data" }}

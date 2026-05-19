@@ -1,0 +1,14 @@
+<div class="quick-filters" data-quick-filters>
+  <div class="quick-filters-pills">
+    {% for f in widget.filters %}
+    <label class="quick-filter-pill{% if f.id in widget.selected %} active{% endif %}" data-quick-filter-pill>
+      <input type="checkbox"
+             class="quick-filter-input"
+             name="{{ widget.name }}"
+             value="{{ f.id }}"
+             {% if f.id in widget.selected %}checked{% endif %}>
+      <span>{{ f.label }}</span>
+    </label>
+    {% endfor %}
+  </div>
+</div>

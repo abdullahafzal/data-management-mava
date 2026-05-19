@@ -1,0 +1,230 @@
+{% extends "pipeline/base.html" %}
+{% load pipeline_extras %}
+{% block title %}{{ data_import.campaign.name }} — Import{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_list' %}">Campaigns</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_detail' pk=data_import.campaign_id %}">{{ data_import.campaign.name }}</a></li>
+    <li class="breadcrumb-item active">Import</li>
+  </ol>
+</nav>
+
+<header class="page-header">
+  <h1>Import pipeline</h1>
+  <p class="lead">{{ data_import.original_filename|default:"Outscraper export" }} — {{ data_import.row_count }} rows</p>
+</header>
+
+<div class="stat-row mb-4">
+  <div class="stat-box">
+    <div class="stat-value">{{ data_import.row_count }}</div>
+    <div class="stat-label">Rows</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ data_import.columns|length }}</div>
+    <div class="stat-label">Source cols</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ data_import.selected_columns|length|default:"—" }}</div>
+    <div class="stat-label">Kept cols</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" style="font-size:0.85rem">{{ data_import.get_status_display }}</div>
+    <div class="stat-label">Status</div>
+  </div>
+</div>
+
+<div class="pipeline-page col-lg-10 col-xl-9 mx-auto">
+
+  {# 1. Outscraper filters #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">1</span> Outscraper filters</h2>
+    </div>
+    <div class="card-body">
+      <ul class="meta-list mb-3">
+        <li><span class="meta-key">Category</span><span class="meta-val">{{ data_import.outscraper_category|default:"—" }}</span></li>
+        <li><span class="meta-key">Location</span><span class="meta-val">{{ data_import.outscraper_location|location_display }}</span></li>
+        {% if data_import.outscraper_max_results %}
+        <li><span class="meta-key">Max results</span><span class="meta-val">{{ data_import.outscraper_max_results }}</span></li>
+        {% endif %}
+      </ul>
+      {% if data_import.advanced_display_lines %}
+      <p class="small text-muted mb-2">Advanced parameters</p>
+      <ul class="meta-list mb-3">
+        {% for key, val in data_import.advanced_display_lines %}
+        <li><span class="meta-key">{{ key }}</span><span class="meta-val">{{ val }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if data_import.extra_tags %}
+      <p class="small text-muted mb-2">Task tags</p>
+      <div class="mb-3">
+        {% for tag in data_import.extra_tags %}
+        <span class="tag-pill">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if data_import.outscraper_services %}
+      <p class="small text-muted mb-2">Enrichment services</p>
+      <div class="mb-3">
+        {% for label in data_import.service_labels %}
+        <span class="tag-pill">{{ label }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if data_import.original_file %}
+      <a href="{% url 'pipeline:download_original' import_pk=data_import.pk %}" class="btn-download">
+        <span class="btn-download-icon slate"><i class="bi bi-file-earmark-arrow-down"></i></span>
+        <span>
+          <div class="btn-download-title">Original Outscraper file</div>
+          <p class="btn-download-desc">Full export as uploaded</p>
+        </span>
+      </a>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 2. Cleaned export #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">2</span> Cleaned export</h2>
+    </div>
+    <div class="card-body">
+      {% if data_import.cleaned_dataset %}
+      <p class="text-muted small mb-3">{{ data_import.cleaned_dataset.row_count }} rows ready for verification and campaigns</p>
+      <a href="{% url 'pipeline:download_cleaned' import_pk=data_import.pk %}" class="btn-download mb-2">
+        <span class="btn-download-icon green"><i class="bi bi-filetype-csv"></i></span>
+        <span>
+          <div class="btn-download-title">Download cleaned CSV</div>
+          <p class="btn-download-desc">Selected columns for campaigns</p>
+        </span>
+      </a>
+      <a href="{% url 'pipeline:select_columns' import_pk=data_import.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-sliders me-1"></i> Re-select columns
+      </a>
+      {% elif data_import.status == 'parsed' %}
+      <p class="text-muted small mb-3">Choose which columns to keep before verification.</p>
+      <a href="{% url 'pipeline:select_columns' import_pk=data_import.pk %}" class="btn btn-app-primary">
+        <i class="bi bi-sliders me-1"></i> Select columns to clean
+      </a>
+      {% else %}
+      <p class="text-muted small mb-0">Cleaned export not available yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 3. MillionVerifier #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">3</span> MillionVerifier</h2>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">Verify emails from the cleaned export and split into good, risky, invalid, and other categories.</p>
+
+      {% if data_import.cleaned_dataset and verification_job and verification_job.status == 'completed' %}
+      <div class="alert alert-success alert-app d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-check-circle-fill"></i>
+        <span class="small">Previous split complete · <code>{{ verification_job.status_column }}</code> · {{ verification_job.completed_at|date:"M j, Y" }}</span>
+      </div>
+      {% for export in verification_job.exports.all %}
+      <a href="{% url 'pipeline:download_verification_export' export_pk=export.pk %}" class="export-list-item">
+        <span class="text-capitalize fw-medium"><i class="bi bi-file-earmark-text me-2"></i>{{ export.category }}</span>
+        <span class="export-count">{{ export.row_count }} rows</span>
+      </a>
+      {% endfor %}
+      <a href="{% url 'pipeline:download_verification_zip' import_pk=data_import.pk %}" class="btn btn-outline-primary btn-sm mt-2 mb-3">
+        <i class="bi bi-file-zip me-1"></i> Download all as ZIP
+      </a>
+      {% elif data_import.cleaned_dataset and verification_job and verification_job.status == 'failed' %}
+      <div class="alert alert-danger alert-app mb-3">{{ verification_job.error_message }}</div>
+      {% endif %}
+
+      {% if data_import.cleaned_dataset %}
+      <button type="button" class="btn btn-app-primary"
+              data-api-modal
+              data-api-title="MillionVerifier"
+              data-api-message="MillionVerifier API is missing.">
+        <i class="bi bi-shield-check me-1"></i> Verify from MillionVerifier
+      </button>
+      {% else %}
+      <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 4. Phone verifier #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">4</span> Phone verifier</h2>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">Validate phone numbers before SMS or calling campaigns.</p>
+      {% if data_import.cleaned_dataset %}
+      <button type="button" class="btn btn-outline-primary"
+              data-api-modal
+              data-api-title="Phone verifier"
+              data-api-message="API is missing.">
+        <i class="bi bi-telephone me-1"></i> Verify the phone number
+      </button>
+      {% else %}
+      <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 5. Diana handoff #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">5</span> Diana handoff</h2>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">Rows missing email and/or phone — for manual enrichment (Spy Dialer, etc.).</p>
+      <a href="{% url 'pipeline:download_diana' import_pk=data_import.pk %}" class="btn-download">
+        <span class="btn-download-icon amber"><i class="bi bi-send"></i></span>
+        <span>
+          <div class="btn-download-title">Diana queue CSV</div>
+          <p class="btn-download-desc">Includes diana_reason column</p>
+        </span>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+{# API missing / not ready modal #}
+<div class="modal fade" id="apiMissingModal" tabindex="-1" aria-labelledby="apiMissingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold" id="apiMissingModalLabel">API not available</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="d-flex gap-3">
+          <i class="bi bi-exclamation-circle text-warning fs-3"></i>
+          <p class="mb-0 small text-muted" id="apiMissingModalBody"></p>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-app-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('[data-api-modal]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const title = btn.getAttribute('data-api-title') || 'API';
+      const message = btn.getAttribute('data-api-message') || 'API is not configured.';
+      document.getElementById('apiMissingModalLabel').textContent = title;
+      document.getElementById('apiMissingModalBody').textContent = message;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('apiMissingModal')).show();
+    });
+  });
+</script>
+{% endblock %}

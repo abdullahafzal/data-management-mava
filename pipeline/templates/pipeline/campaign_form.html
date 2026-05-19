@@ -1,0 +1,66 @@
+{% extends "pipeline/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block extra_css %}{{ form.media.css }}{% endblock %}
+{% block extra_js %}{{ form.media.js }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_list' %}">Campaigns</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+  </ol>
+</nav>
+
+<header class="page-header">
+  <h1>{{ title }}</h1>
+  <p class="lead">Choose automatic or manual processing. You will enter Outscraper filters when you upload each export.</p>
+</header>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card-app mb-4">
+    <div class="card-app-header"><h2><i class="bi bi-toggles me-2"></i>Processing mode</h2></div>
+    <div class="card-body">
+      <div class="row g-3">
+        {% for radio in form.processing_mode %}
+        <div class="col-md-6">
+          <label class="mode-card d-block mb-0">
+            <div class="d-flex gap-3">
+              {{ radio.tag }}
+              <div>
+                <strong>{{ radio.choice_label }}</strong>
+                {% if radio.data.value == 'automatic' %}
+                <p class="small text-muted mb-0 mt-2">Upload → auto-clean with preset columns → download files. MillionVerifier when API is ready.</p>
+                {% else %}
+                <p class="small text-muted mb-0 mt-2">Full control: Outscraper tags, pick columns, manual MillionVerifier upload.</p>
+                {% endif %}
+              </div>
+            </div>
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+      {% if form.processing_mode.errors %}<div class="text-danger small mt-2">{{ form.processing_mode.errors.0 }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="card-app">
+    <div class="card-app-header"><h2><i class="bi bi-card-text me-2"></i>Campaign details</h2></div>
+    <div class="card-body">
+      {% for field in form %}
+        {% if field.name != 'processing_mode' %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+      <div class="d-flex gap-2 pt-2">
+        <button type="submit" class="btn btn-app-primary px-4">Create campaign</button>
+        <a href="{% url 'pipeline:campaign_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

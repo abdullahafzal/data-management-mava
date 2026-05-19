@@ -1,0 +1,96 @@
+{% extends "pipeline/base.html" %}
+{% load pipeline_extras %}
+{% block title %}Duplicate filters{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_list' %}">Campaigns</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_detail' pk=campaign.pk %}">{{ campaign.name }}</a></li>
+    <li class="breadcrumb-item active">Duplicate check</li>
+  </ol>
+</nav>
+
+<div class="alert-banner-warning mb-4">
+  <div class="d-flex gap-3">
+    <i class="bi bi-exclamation-triangle-fill fs-3" style="color:var(--warning)"></i>
+    <div>
+      <h1 class="h5 mb-1">You may already have this data</h1>
+      <p class="mb-0 small">These Outscraper filters match a previous export. Avoid paying twice — use an existing file or continue anyway.</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-5">
+    <div class="card-app">
+      <div class="card-app-header"><h2>Your filters</h2></div>
+      <div class="card-body">
+        <ul class="meta-list">
+          <li><span class="meta-key">Category</span><span class="meta-val">{{ data_import.outscraper_category }}</span></li>
+          <li><span class="meta-key">Location</span><span class="meta-val">{{ data_import.outscraper_location|location_display }}</span></li>
+          {% if data_import.outscraper_max_results %}
+          <li><span class="meta-key">Max results</span><span class="meta-val">{{ data_import.outscraper_max_results }}</span></li>
+          {% endif %}
+          {% if data_import.quick_filter_labels %}
+          <li>
+            <span class="meta-key">Quick filters</span>
+            <span class="meta-val">
+              {% for label in data_import.quick_filter_labels %}<span class="tag-pill tag-pill-accent">{{ label }}</span>{% endfor %}
+            </span>
+          </li>
+          {% endif %}
+          {% for key, val in data_import.advanced_display_lines %}
+          {% if key != "Quick filters" %}
+          <li><span class="meta-key">{{ key }}</span><span class="meta-val">{{ val }}</span></li>
+          {% endif %}
+          {% endfor %}
+          {% if data_import.outscraper_services %}
+          <li>
+            <span class="meta-key">Services</span>
+            <span class="meta-val">
+              {% for label in data_import.service_labels %}<span class="tag-pill">{{ label }}</span>{% endfor %}
+            </span>
+          </li>
+          {% endif %}
+          <li><span class="meta-key">File</span><span class="meta-val text-break">{{ data_import.original_filename }}</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card-app">
+      <div class="card-app-header"><h2>{{ duplicates|length }} matching import{{ duplicates|length|pluralize }}</h2></div>
+      <div class="card-body p-0">
+        {% for dup in duplicates %}
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+          <div>
+            <strong>{{ dup.campaign.name }}</strong>
+            <div class="small text-muted d-block">{{ dup.created_at|date:"M j, Y" }} · {{ dup.row_count }} rows</div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{% url 'pipeline:download_original' import_pk=dup.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i></a>
+            <a href="{% url 'pipeline:import_detail' import_pk=dup.pk %}" class="btn btn-sm btn-app-primary">Open</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2">
+  <form method="post" action="{% url 'pipeline:upload_confirm' import_pk=data_import.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="confirm">
+    <button type="submit" class="btn btn-warning fw-semibold">
+      {% if is_automatic %}Process anyway{% else %}Upload anyway{% endif %}
+    </button>
+  </form>
+  <form method="post" action="{% url 'pipeline:upload_confirm' import_pk=data_import.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="cancel">
+    <button type="submit" class="btn btn-outline-secondary">Use existing data</button>
+  </form>
+  <a href="{% url 'pipeline:campaign_detail' pk=campaign.pk %}" class="btn btn-link">Back</a>
+</div>
+{% endblock %}

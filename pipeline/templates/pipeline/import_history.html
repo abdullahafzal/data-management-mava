@@ -1,0 +1,98 @@
+{% extends "pipeline/base.html" %}
+{% load pipeline_extras %}
+{% block title %}Import history{% endblock %}
+{% block content %}
+<header class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <h1>Import history</h1>
+    <p class="lead">Every Outscraper export with filters. Re-use files when filters match to avoid duplicate charges.</p>
+  </div>
+  <a href="{% url 'pipeline:campaign_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-grid me-1"></i> Campaigns
+  </a>
+</header>
+
+<form method="get" class="filter-panel">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">Campaign</label>
+      <select name="campaign" class="form-select">
+        <option value="">All campaigns</option>
+        {% for c in campaigns %}
+        <option value="{{ c.pk }}" {% if campaign_selected == c.pk %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Category</label>
+      <input type="text" name="category" class="form-control" value="{{ filter_values.category }}" placeholder="auto body shop">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Location</label>
+      <input type="text" name="location" class="form-control" value="{{ filter_values.location }}" placeholder="Westchester">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Search</label>
+      <input type="text" name="q" class="form-control" value="{{ filter_values.q }}" placeholder="Any field…">
+    </div>
+  </div>
+  <div class="d-flex gap-2 mt-3 align-items-center">
+    <button type="submit" class="btn btn-app-primary btn-sm"><i class="bi bi-search me-1"></i> Apply</button>
+    <a href="{% url 'pipeline:import_history' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+    {% if imports %}<span class="text-muted small ms-2">{{ imports|length }} result{{ imports|length|pluralize }}</span>{% endif %}
+  </div>
+</form>
+
+{% if imports %}
+<div class="card-app">
+  <div class="table-responsive">
+    <table class="table table-app">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Campaign</th>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Rows</th>
+          <th>Tags</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for imp in imports %}
+        <tr>
+          <td class="text-nowrap">{{ imp.created_at|date:"M j, Y" }}</td>
+          <td><a href="{% url 'pipeline:campaign_detail' pk=imp.campaign_id %}" class="fw-medium text-decoration-none">{{ imp.campaign.name }}</a></td>
+          <td>{{ imp.outscraper_category|default:"—" }}</td>
+          <td>{{ imp.outscraper_location|location_display|default:"—" }}</td>
+          <td><strong>{{ imp.row_count }}</strong></td>
+          <td style="max-width:200px">
+            {% for label in imp.service_labels|slice:":3" %}
+            <span class="tag-pill">{{ label }}</span>
+            {% endfor %}
+            {% if imp.service_labels|length > 3 %}<span class="tag-pill">+{{ imp.service_labels|length|add:"-3" }}</span>{% endif %}
+            {% for tag in imp.extra_tags %}
+            <span class="tag-pill tag-pill-accent">{{ tag }}</span>
+            {% endfor %}
+          </td>
+          <td class="text-end text-nowrap">
+            <a href="{% url 'pipeline:download_original' import_pk=imp.pk %}" class="btn btn-sm btn-outline-secondary" title="Original"><i class="bi bi-download"></i></a>
+            <a href="{% url 'pipeline:download_diana' import_pk=imp.pk %}" class="btn btn-sm btn-outline-secondary" title="Diana"><i class="bi bi-send"></i></a>
+            <a href="{% url 'pipeline:import_detail' import_pk=imp.pk %}" class="btn btn-sm btn-app-primary">Open</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card-app">
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+    <h2 class="h5 text-dark">No imports found</h2>
+    <p class="mb-0">Try adjusting your filters or upload data from a campaign.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

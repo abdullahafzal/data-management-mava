@@ -1,0 +1,16 @@
+{% load static %}
+<div class="location-picker category-picker" data-category-picker
+     data-suggest-url="{% url 'pipeline:category_suggest' %}"
+     data-record-url="{% url 'pipeline:category_record' %}">
+  <div class="location-picker-tags-wrap picker-input-wrap" data-tags-wrap style="min-height:2.5rem">
+    <div class="location-picker-tags" data-tags role="list"></div>
+    <input type="text" class="location-picker-input" data-tag-input
+           placeholder="Type to search categories…" autocomplete="off" aria-label="Categories">
+    <div class="picker-dropdown" data-dropdown hidden></div>
+  </div>
+  <div class="location-picker-hint small text-muted mt-1">
+    Type to search · saved options appear for everyone next time
+  </div>
+  <input type="hidden" name="{{ widget.name }}" id="{{ widget.attrs.id|default:widget.name }}"
+         value="{{ widget.value }}" data-value>
+</div>

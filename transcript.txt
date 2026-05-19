@@ -1,0 +1,999 @@
+Abdullah Chaudhry: Maybe just five process them through all the steps that you do and then finally run the campaign on them. Just five emails.
+Salvador Morales: Yeah, sure. So, yeah, for example, you know, first step, I'd write here the information. Then if I have to search data for one campaign in this case let's say scrap metal state I go to Google map scraper this one. So here you can find a lot of categories like let's just say I want to auto repair shops or whatever and you can add whatever information you want here.
+Abdullah Chaudhry: And who decides this category?
+Salvador Morales: So
+Abdullah Chaudhry: Like is it the Matt who gives you instructions that we are going to go with this category or do you decide it by yourself?
+Salvador Morales: um as a team most of the time Matt gives me like a general target and then it's my job lo to like try to be more specific with the target get the specific information and send it to those people. But most of the time it's just like uh you know between Matt and
+ 
+ 
+00:27:20
+ 
+Abdullah Chaudhry: H.
+Salvador Morales: I.
+Abdullah Chaudhry: Okay.
+Salvador Morales: So let's say you know I need scrap metal dealer and then here this listing is in New York state. So I will just like let me see if I can write NY. Yeah, I can I will just select like the whole state in this case because you can just write New York and these are like the different counties in New York. So you can go one by one but in this case I will just write like New York state to get the information from all the states. Here I can put like the maximum of uh data entries that I get. This is more you know to control how much it will cost like the whole import. And then here I can just select I usually just select all services and I see a breakdown on of all the services that these guys can provide. Uh as you can see I already have some selected because are the ones that I always use you know it's like the email address verifier phone identity finder phone numbers and reacher white pages addresses I'm not white pages is like you know it was a book where everybody used to be there and you can see like I don't know like Salvador Morales and the address and the phone and you know so it's like it's like that you know
+ 
+ 
+00:28:50
+ 
+Abdullah Chaudhry: Uh-huh.
+Salvador Morales: it's now of course it's not a book Exactly.
+Abdullah Chaudhry: Phone directory.
+Salvador Morales: Exactly. And then emails and content scraper. So in this case I just use those ones and you know maybe this time I will get this one also geocoding because I was trying to create a little map where we can see like where are like the different shops and what shops you know
+Abdullah Chaudhry: Uhhuh.
+Salvador Morales: just like to be more specific on which shops we can try to sell or buy. Uh but yeah, after I select like the different services that we want, I just click like get data. I will need to configure the task. Takes a
+Abdullah Chaudhry: And for the And for today's com campaign,
+Salvador Morales: minute.
+Abdullah Chaudhry: do you did you already run or you will?
+Salvador Morales: No, no, no. We I actually need this information.
+Abdullah Chaudhry: Okay. Okay. Okay. And can you hide this button uh in the bottom meets meets
+Salvador Morales: Another
+Abdullah Chaudhry: but yes okay what does it say free here might
+ 
+ 
+00:30:00
+ 
+Salvador Morales: one.
+Abdullah Chaudhry: be seating this is a is not subscription one like is it
+Salvador Morales: No,
+Abdullah Chaudhry: free okay
+Salvador Morales: this is a we paper export. We
+Abdullah Chaudhry: Google map got it okay so they're going to charge us this amount of money once we
+Salvador Morales: paper.
+Abdullah Chaudhry: click on confirm
+Salvador Morales: Yeah, exactly.
+Abdullah Chaudhry: and they will give us 1100 Google Play and what exactly do we need from like we are targeting we we need emails only for from this export or we would be needing phone numbers from this export as well.
+Salvador Morales: both emails and phones.
+Abdullah Chaudhry: Okay. And you will run the email campaign and even for the phone number you will run the text campaign. Right.
+Salvador Morales: Yes.
+Abdullah Chaudhry: But after that uh someone else can right do the calling campaigns
+Salvador Morales: Someone else can also what? Sorry.
+Abdullah Chaudhry: cold call.
+Salvador Morales: Oh yes yes yes yes this information also help us for that or with
+Abdullah Chaudhry: Okay. So this is a one of the uh major data
+ 
+ 
+00:31:09
+ 
+Salvador Morales: that
+Abdullah Chaudhry: uh scraping point that we have to you know make the calls, emails, text messages.
+Salvador Morales: yes I think he's well right now he's the main You are still you are still seeing my
+Abdullah Chaudhry: Yes, I can
+Salvador Morales: cool.
+Abdullah Chaudhry: cheat.
+Salvador Morales: So ah f*** Let me box this somewhere just no
+Abdullah Chaudhry: Yeah, this is fine. No, this is fine. Thank you.
+Salvador Morales: worries. So this is what we get. I mean this is a different uh export that I did in the past. This is just like you know for uh the purpose of you see how it uh the files look.
+Abdullah Chaudhry: got
+Salvador Morales: So we get this like generated by our scraper.
+Abdullah Chaudhry: it.
+Salvador Morales: This sheet the other ones I created them and just like play with the data. So the other ones we don't mind right now but you know basically we get this you know like the
+Abdullah Chaudhry: Yeah.
+Salvador Morales: query the name of the business name for email the sites and you know
+ 
+ 
+00:32:34
+ 
+Abdullah Chaudhry: Yes. Uh quick quick question.
+Salvador Morales: information like
+Abdullah Chaudhry: So the the column names and the number of columns would always be
+Salvador Morales: that.
+Abdullah Chaudhry: 100% same or depending upon your set.
+Salvador Morales: Can you repeat? Sorry you you broke.
+Abdullah Chaudhry: So okay can you hear me now? So for example the column names right now we have first column name second one name for emails.
+Salvador Morales: Yes.
+Abdullah Chaudhry: So every time you export the data the all the column names will be the same or it would depend upon the settings that you would do before exporting the data.
+Salvador Morales: Depends on the settings. But since since I'm always uh selecting the same
+Abdullah Chaudhry: Okay.
+Salvador Morales: settings, then the file always look the
+Abdullah Chaudhry: Okay. Okay. Okay. That's terly important for me to understand it. Okay. Got it.
+Salvador Morales: same.
+Abdullah Chaudhry: So that means every time uh no matter how uh what's the area, what's the uh what's the niche, what's the keyword that you are going to search, every time the output format is 100% same.
+ 
+ 
+00:33:42
+ 
+Salvador Morales: Yes, exactly.
+Abdullah Chaudhry: Next,
+Salvador Morales: Yeah.
+Abdullah Chaudhry: please
+Salvador Morales: So we get that info. So we got a lot of stuff that we actually do not use but you know the program give us give it.
+Abdullah Chaudhry: give us it.
+Salvador Morales: So so yeah.
+Abdullah Chaudhry: Yeah.
+Salvador Morales: So basically the important thing here is as you can see we have a lot of information more information but what I want to show you is yeah here like we get the phones and we get like a person that is like associated with the building with the business sorry you know like the main issue that we have right now is that we want to find a real owner of the business because of course the real owner is the people calling the shots and sometimes these people are not the real business owners. Most of the times they are actually not the real business owners and this phone is the phone of the business that you know when you call most of the time the person who pick up the phone is just like you know like an employee and he cannot call like any shots that you know like about selling or buying or whatever.
+ 
+ 
+00:34:54
+ 
+Salvador Morales: So that's like a little bit a disconnection that we have there and an important step that we need to figure it out, you know. It's like how to get the new the real owner of the business and the phone of that person of the real owner. That's why I think you already call have your call with Diana, but that's why Diana searches like the address and stuff to get like the information of the person related to the business.
+Abdullah Chaudhry: Uh,
+Salvador Morales: Uh But yeah, that's like, you know, a really big important thing that we need to figure
+Abdullah Chaudhry: okay.
+Salvador Morales: out. It's just not it's not just like getting the phone of these persons. It's actually figuring out if these persons are the real business owners.
+Abdullah Chaudhry: Okay. So the confusion is the confusion can be maybe once we call on this number let's say the second one uh is body pro maybe it's the that I think it's a business name right it's not a person name business name let's
+Salvador Morales: Yeah, this one is a business name.
+ 
+ 
+00:36:01
+ 
+Salvador Morales: But let's say this
+Abdullah Chaudhry: yeah let's say one so that means it's not just that the person
+Salvador Morales: one.
+Abdullah Chaudhry: is or not maybe the person is if we call that number but the problem is we don't know if this person is owner or not owner, right?
+Salvador Morales: Exactly.
+Abdullah Chaudhry: So what we do here is what we get the phone number and we uh put it into the spy dialer and get the name of that person and
+Salvador Morales: Yes.
+Abdullah Chaudhry: also also uh confirm it uh the phone number what's the name of the person we double verify it and
+Salvador Morales: Yes. And also also an important part of that is that this phone number most of the time is a phone number of the
+Abdullah Chaudhry: yeah
+Salvador Morales: business. We want to get the phone number of the owner.
+Abdullah Chaudhry: hm H. And uh how do we do
+Salvador Morales: That's you know that's that's like a the the tricky part because
+Abdullah Chaudhry: that?
+Salvador Morales: sometime you know like by calling like Claudia or Matthew when they are doing their call calls you know they speak maybe to this like Alison and she's not the just she's maybe the manager and she will give them the information of the owner but of course that not that's not like really effective and helpful.
+ 
+ 
+00:37:17
+ 
+Salvador Morales: So right now we are trying to find different uh sources of data that might be more accurate. So for example in this scrap metal thing uh Matt send me the link to this site is a little bit similar. It's actually the same site. I'm not sure if you remember that I sent you a site with the Yeah.
+Abdullah Chaudhry: Send me the one. Yeah, New York one.
+Salvador Morales: Yeah. Yeah.
+Abdullah Chaudhry: That has a new data.
+Salvador Morales: This is the same site. So now this is licenses but for scrap metal places. And here since they have to give their personal information to go through the process, you know, we can see like the phone of the owner and the actual owner like Richard Mur.
+Abdullah Chaudhry: Mhm.
+Salvador Morales: But this is something that we just like started to figuring out, you know, to see if it actually works. So
+Abdullah Chaudhry: But but the but the problem with this one is do they tell also the name of this
+Salvador Morales: yeah,
+Abdullah Chaudhry: business.
+ 
+ 
+00:38:15
+ 
+Salvador Morales: I think so. Let me let me see here. Yeah. Yeah. Facility name here.
+Abdullah Chaudhry: Okay. So these are the business's names.
+Salvador Morales: Yeah. And you know, I think it has like the the basic information that we need, you know, like the name, the location, name of the business, location, uh phone number, and the owner or at least the person that applied to get the license. So that's like, you know, so much better than just getting like the receptionist or the manager or something like
+Abdullah Chaudhry: Uh the the the only problem with this one would be that it has limited
+Salvador Morales: that.
+Abdullah Chaudhry: data, right?
+Salvador Morales: Yeah. Yeah. I think so. I think it's we get so much more information,
+Abdullah Chaudhry: No,
+Salvador Morales: you know, talking about just not Yeah.
+Abdullah Chaudhry: I I'm I'm confused why we are using out scraper when we most of the times it's not going to give us the information of the owners. It will be the business phone that we just have to you know call maybe it's a receptionist or someone who ends the call maybe manager.
+ 
+ 
+00:39:19
+ 
+Abdullah Chaudhry: So why don't why don't we just skip that part and only work on this sheet.
+Salvador Morales: So we start using out scraper before actually going like and knowing that we can get the information from here from the site. So outscraper was just like you know like the first step and more general that uh export but you know I think I also believe is more effective to do it from here from the New York website but uh yeah I don't know I think it's
+Abdullah Chaudhry: And we only have the and in in the new and in in this site we the problem is we only have
+Salvador Morales: sorry
+Abdullah Chaudhry: the data for New York shade nothing
+Salvador Morales: yeah exactly this is just New York and actually you know I think it's like in other states is very
+Abdullah Chaudhry: else.
+Salvador Morales: limited. New York is like a big plus is that all the information is public and everybody has to do like this kind of licenses and stuff. So, it's easy to get that information here in New York. But if you want to go to a different state or whatever, it's so much more harder.
+ 
+ 
+00:40:24
+ 
+Abdullah Chaudhry: And this is the official sheet. That means there are also a lot of other people that are going to also call these businesses.
+Salvador Morales: Yes. If they are trying to do the same thing as our as we are, yeah, they will call
+Abdullah Chaudhry: And how do we decide that these people's are the buyer ones or the seller ones?
+Salvador Morales: here.
+Abdullah Chaudhry: Like how do we get to know mostly these are the seller ones like we are going to purchase business from
+Salvador Morales: Yeah. Yeah. For example,
+Abdullah Chaudhry: them.
+Salvador Morales: right now we want to pitch the the business that we have in our listings about scrap metal place. We have a scrap mental place and I mean the idea is to call them offering the place but or you know email them and text them but also a lot of times they say instead of like hey I want to buy they also say like hey I'm trying to sell my place. So you know it's like a little bit of trying to do both things you know that hey do you want to buy or you know is there any chance you want to
+ 
+ 
+00:41:26
+ 
+Abdullah Chaudhry: Okay.
+Salvador Morales: sell
+Abdullah Chaudhry: And but most of the times we are making calls to buy the these businesses that we are going to buy your uh business, right?
+Salvador Morales: uh I didn't get that question.
+Abdullah Chaudhry: So most of the times our major goal is to just contact them and see if they can uh if we can
+Salvador Morales: Sorry.
+Abdullah Chaudhry: buy the business from them, right?
+Salvador Morales: Yes.
+Abdullah Chaudhry: Got it.
+Salvador Morales: Yes.
+Abdullah Chaudhry: Okay. So once uh Okay. So once you scrape the sheet from out scraper then you give it to Diana and she gets back to you with another sheet uh that has the information from uh spy dialer and instant checkmake right then. Yeah.
+Salvador Morales: H no before that you know before giving this to Diana I do this.
+Abdullah Chaudhry: Uhhuh.
+Salvador Morales: So for example this was just to verify the emails. So I clean the rest of the information that I don't need to the end of the day just get to the just keeping the name of the of the business the address and the email.
+ 
+ 
+00:42:32
+ 
+Salvador Morales: So this is just like a master list of all the emails that we have over there and I verify these emails. So I export this as a CSV file and I use this website called million verifier and in here I just uh that CSV file that only contains you know the name and the email. I select a file and then this thing verifies the emails and then after ver this thing is done you know it's it gives me this kind of uh this kind of file. So as you can see here I mean right now I only downloaded the good emails. So these are the ones that I know that I can use for the campaign. So this list of people is our list of uh leads and this is the list that I will upload to a smart lead. this one. So, for example, when I create a campaign and let's just say test, I
+Abdullah Chaudhry: I'm sorry.
+Salvador Morales: hit.
+Abdullah Chaudhry: Why? I thought we are going to give it to Diana this sheet.
+ 
+ 
+00:43:32
+ 
+Abdullah Chaudhry: No.
+Salvador Morales: No, no, no. That's a that's a next step. I mean, right now, what I'm doing is like I get this s***,
+Abdullah Chaudhry: Okay.
+Salvador Morales: I verify the emails. After I verify the emails, I get this other uh sheet from the program called Million Verifier. And here, you know, these are emails. These are emails that are you know functioning.
+Abdullah Chaudhry: Lord,
+Salvador Morales: So we can send email to and this is a list of people that I upload upload to this other program to smart lead.
+Abdullah Chaudhry: got
+Salvador Morales: So when when I start the campaign like the one that I just created like here it test it will like ask me for the
+Abdullah Chaudhry: it.
+Salvador Morales: leads and here is like you know I will drop the CSV file here and those are the people that we get will get our campaign and I I do the same thing you know after this I just like create the campaign and write whatever I want to write and then click send and that's it and I do the same thing but for cell phones so you know in case that we want to send an email, sorry, an SMS campaign.
+ 
+ 
+00:44:33
+ 
+Salvador Morales: So here we get like all these phones, I do the same thing of cleaning the the list and just like at the end of the day just having like the name, the address and in this case the phones and I go to a program called real full validation. Maybe I won't be able to log in right now. Let me see. Oh yeah. So in this program we verify just like phone numbers. So after I'm in this program I hit here but hit here validation. I can choose the different type of validations that I want. We always use well I always use turway standard because it tell me you know the basic information that we need if it's connected or not and what type of phone is it you know like if it's a line land line landline or a cell phone. And here I just choose my CSV file and it will work in the same uh way that medium verifier does you know giving me this kind of s***. Oh the other one uh this one but you know with the phones and letting me know which
+ 
+ 
+00:45:43
+ 
+Abdullah Chaudhry: Got
+Salvador Morales: type of phone is it and yeah I just after this I just
+Abdullah Chaudhry: it.
+Salvador Morales: like clean information to just keep the cell phone numbers. I jump here to this is simple texting. This is the other program that we use for campaigns. But this one is just for SMS text campaigns. So I just upload the contacts, you know, it's just like I create a new list here like add contact. Sorry. I choose a file. I select to create a new list and just name the list according to what I'm sending. So I just saying like scrap metal place or whatever and yeah after that I will just map the information and upload it and after that we can just like you know send the campaigns to those guys I mean a regular you know like the campaigns that we send from here they look like this
+Abdullah Chaudhry: Mhm.
+Salvador Morales: regularly just like a short text to see if they are interested if you are interested just call us back uh but yeah basically that's it and after I did those two steps and I know which information is verified and which one was like you know the verification process throw that the information was wrong or useless then that's the list that I give to Diana you know like just like the list of people that are the remaining people that we don't have email or phone numbers
+ 
+ 
+00:47:12
+ 
+Abdullah Chaudhry: Oh,
+Salvador Morales: for
+Abdullah Chaudhry: so from so from out scraper we only give the list to Diana that uh the people were unable to find the phone numbers for it or emails.
+Salvador Morales: exactly. Yeah.
+Abdullah Chaudhry: Okay. And how much of the data is usually without the emails or phone
+Salvador Morales: Oh man,
+Abdullah Chaudhry: number?
+Salvador Morales: I would say maybe like 50%.
+Abdullah Chaudhry: But this looks like it has a lot of data.
+Salvador Morales: Yeah.
+Abdullah Chaudhry: It's not
+Salvador Morales: No, but after after verifying a lot goes away and also Yeah.
+Abdullah Chaudhry: missing.
+Salvador Morales: Know after verifying a lot goes away.
+Abdullah Chaudhry: After what?
+Salvador Morales: So that's why I will say yeah verifying after verifying the phone numbers and the
+Abdullah Chaudhry: Afterward
+Salvador Morales: emails.
+Abdullah Chaudhry: verifying the phone number and email a lot of the business is left without uh correct email or phone number right okay so once we
+Salvador Morales: Yeah.
+Abdullah Chaudhry: ver business phone number is not verified we don't just delete it we send it to Diana to find the you know data for
+ 
+ 
+00:48:13
+ 
+Salvador Morales: A good Yeah,
+Abdullah Chaudhry: it and so That means she don't really work with all of the
+Salvador Morales: exactly.
+Abdullah Chaudhry: sheets. Just work with the missing ones.
+Salvador Morales: Diana. Yeah, Diana just works with the missing
+Abdullah Chaudhry: Missing ones. Got it. I'm sorry.
+Salvador Morales: ones.
+Abdullah Chaudhry: Sometimes I just have to uh ask one uh thing for two or three times because in my mind I was thinking a solution for that. That's why I ask it again and again.
+Salvador Morales: No, it's
+Abdullah Chaudhry: Got it. Thank you. Okay.
+Salvador Morales: fine.
+Abdullah Chaudhry: So, uh yeah, please go back to the point where we have left. I think we were on the smart leads. So,
+Salvador Morales: Uh,
+Abdullah Chaudhry: we have
+Salvador Morales: yeah. Yeah,
+Abdullah Chaudhry: upload.
+Salvador Morales: it's basically uploading the information. After I upload the the information, I will create a step here that you know it will be the email. So here is just like right subject,
+Abdullah Chaudhry: Got it.
+ 
+ 
+00:49:05
+ 
+Abdullah Chaudhry: Got it. Got it.
+Salvador Morales: writing the after that I will select
+Abdullah Chaudhry: Quence means followup. Sequence means follow-up messages,
+Salvador Morales: uh yeah I mean I can
+Abdullah Chaudhry: follow-up emails as well, right?
+Salvador Morales: do right now just like a first step and after I do the first step I can add a sequence. So it will be a second step you know like send money or send another campaign but
+Abdullah Chaudhry: Got it.
+Salvador Morales: here yeah it's basically just writing the subject writing the email after that this thing
+Abdullah Chaudhry: Yeah, got it.
+Salvador Morales: will ask me the email accounts that we want to use. So we have several different email accounts here as you can see. Uh so depending the type of campaign that we are sending is the email accounts that we will select. So in this case we are sending a MABA business advisors uh campaign.
+Abdullah Chaudhry: How many emails we have?
+Salvador Morales: So I would get let me see
+Abdullah Chaudhry: How many email addresses we have here? Email accounts.
+ 
+ 
+00:49:54
+ 
+Salvador Morales: I think about 20 or something like that.
+Abdullah Chaudhry: No, it's more than that. 5 to 20
+Salvador Morales: 32 maybe. Oh 57.
+Abdullah Chaudhry: 32.
+Salvador Morales: You have 57.
+Abdullah Chaudhry: Yes.
+Salvador Morales: I was way off.
+Abdullah Chaudhry: Yeah.
+Salvador Morales: But yeah, in this case for example since Yes.
+Abdullah Chaudhry: And did you I'm sorry.
+Salvador Morales: Yes.
+Abdullah Chaudhry: Did you did you set up these accounts by purchasing the domains? How did you uh how did you purchase these emails? From this tool or another
+Salvador Morales: I think both I I believe because that was Matt,
+Abdullah Chaudhry: tool.
+Salvador Morales: but I believe he bought it from a company that just like, you know, sells sells the the emails and set them up for you, but I'm not 100% sure to be honest.
+Abdullah Chaudhry: Got it.
+Salvador Morales: But yeah, I mean here you just select whatever emails that we want to use. So usually you know since this is a MABA campaign I will select the MA ones uh after
+Abdullah Chaudhry: What's What's the difference between sequence and
+ 
+ 
+00:51:12
+ 
+Salvador Morales: that
+Abdullah Chaudhry: subsequence?
+Salvador Morales: uh subsequence is like you know we can add like when when a lead from the lead sequence open a campaign do X or if he doesn't opens the campaign in within two days then do why you know like different steps like that.
+Abdullah Chaudhry: Oh, got
+Salvador Morales: We actually never use it.
+Abdullah Chaudhry: it.
+Salvador Morales: We we we just use like the sequence and we can we add more steps to the sequence but we really haven't used subsequence and you
+Abdullah Chaudhry: Got it.
+Salvador Morales: know like the final step is just like changing the settings of the campaign. So, it's just like you can change like the time zone and the spread of time that this thing will be sending emails, you know, just to don't bother people on Saturday and Sunday and just send emails from 9 to 6 talking about New York time. And yeah, basically that's whatever. That's it. you know, we just move these settings here. Uh the rest, I mean, you can play around if you want, but we never move these things.
+ 
+ 
+00:52:29
+ 
+Salvador Morales: Um, and yeah, that's it. After that, I mean, here says save changes because I haven't actually done a campaign, but here it says just sent. And yeah, we sent the campaign through here. And that's basically it for a smart lead.
+Abdullah Chaudhry: Got it.
+Salvador Morales: And for this other program for simple text after we uploaded the contacts like I just showed you you know here is just like we go here to campaigns you just create new campaign we name the campaign. So in this test one, we write here whatever we want to say. We always delete this message. So they don't know it's like a campaign and they feel it's more like a personal text. In here you select whatever list of contacts we uploaded. I mean let's just say whatever auto body shops right now. And you can also schedule the campaign. I in this case I almost always select immediately because I do it when I want to send it and yeah after that I just hit next. You see here like the overview of the campaign and just send now and that's it.
+ 
+ 
+00:54:00
+ 
+Abdullah Chaudhry: Okay. And do you know how much it costs us per SMS or per email?
+Salvador Morales: Uh, I think we can look at it. Trying to remember
+Abdullah Chaudhry: Maybe we go to analytics.
+Salvador Morales: giving stats. I want to see the subscription that we have because there you can see how much we pay and how many texts we get from, you know, to send each month. But
+Abdullah Chaudhry: You can go to last 30 days. No, go back to subscription report and last 30 days. No, you have not used it. I
+Salvador Morales: yeah,
+Abdullah Chaudhry: think
+Salvador Morales: I know. But this one is a monthly a monthly basis.
+Abdullah Chaudhry: maybe last 13 last 90 days.
+Salvador Morales: So Oh,
+Abdullah Chaudhry: Maybe last 90
+Salvador Morales: f***.
+Abdullah Chaudhry: 0. Do the custom one and do for the last year. Do the custom.
+Salvador Morales: Oh,
+Abdullah Chaudhry: Yeah. Select any date. Select any date from both of the 2025 and 2026.
+Salvador Morales: f***.
+Abdullah Chaudhry: Then it will work.
+ 
+ 
+00:55:46
+ 
+Abdullah Chaudhry: That's fine.
+Salvador Morales: f***.
+Abdullah Chaudhry: So, pick a date from this one. That's fine. Pick a date from April. Pick a date. Yes. Then go back to Yeah. No. Second column. No, no, no, no, no. Go back. Click somewhere else. Click somewhere else. Yeah. Second one. True. No, no, no. Go look at the bottom of it.
+Salvador Morales: Oh my bad. My bad. You're
+Abdullah Chaudhry: Yeah. Okay. Now, click anywhere.
+Salvador Morales: right.
+Abdullah Chaudhry: Okay. Yes. doesn't show any This is weird.
+Salvador Morales: This is weird.
+Abdullah Chaudhry: Yeah,
+Salvador Morales: Yeah, there's something wrong there because
+Abdullah Chaudhry: that's fine. That's fine. That is fine. And how about the uh the smart lead? I guess it has monthly
+Salvador Morales: Yeah, that's also monthly. I think Matt pays around 200 per
+Abdullah Chaudhry: subscription.
+Salvador Morales: month. Yes.
+ 
+ 
+00:56:48
+ 
+Salvador Morales: Subscription. Here we can set 150k emails per
+Abdullah Chaudhry: And uh can we go back to the previous months how much we have used it?
+Salvador Morales: month.
+Abdullah Chaudhry: Okay, we are using this package pro one. No, scroll scroll. It says 30,000 contacts and uh add on add on. Which package are you using? This one pro.
+Salvador Morales: Yeah, I think we have the pro.
+Abdullah Chaudhry: Okay. Go up.
+Salvador Morales: You can see here propan.
+Abdullah Chaudhry: Yeah. Pro plan. Okay. So uh can we see how much we have used in the previous month? Uh scroll up. No, it will not be there. Uh, click on.
+Salvador Morales: Maybe if we go back to email campaigns, uh, smart prospect, there was a way to see like a general dashboard, but I really don't remember exactly Where? Oh, here. Um, where what's the time period that you want to see?
+Abdullah Chaudhry: Maybe last 30 days,
+Salvador Morales: What? Sorry.
+ 
+ 
+00:58:45
+ 
+Salvador Morales: Can you repeat?
+Abdullah Chaudhry: one
+Salvador Morales: Okay.
+Abdullah Chaudhry: month, just a month of April. You can go just for April. Just for April. Yeah. Uh okay,
+Salvador Morales: f***
+Abdullah Chaudhry: good.
+Salvador Morales: there.
+Abdullah Chaudhry: That's actually good. We got Okay, 16 replies, right?
+Salvador Morales: Yeah.
+Abdullah Chaudhry: Okay. So once we get a reply, then what do you do? So I think you have mentioned to me then you copy the data and put it into Monday.
+Salvador Morales: Yes, yes, yes. Um, I'm really don't track the replies. That's more Matthew or Claudia, but you can go here to master inbox and you will see all the replies for all the different campaigns in here. So, basically, you know, they go through these replies and, you know, there's two different like paths. They just write back from here or they call them and then they register whatever they said or whatever they talk to these guys on Monday.
+Abdullah Chaudhry: uh no they don't talk to Okay so on Monday they don't talk to them but on Monday they put it as a like potential lead so that they can track the lead basically on Monday they track the lead
+ 
+ 
+01:00:03
+ 
+Salvador Morales: Yeah. Yeah. Yeah.
+Abdullah Chaudhry: right track the
+Salvador Morales: On Monday they only track the leads. I mean they talk to them in another program.
+Abdullah Chaudhry: lead got it and this is something that you don't
+Salvador Morales: Yeah.
+Abdullah Chaudhry: track this the replies. This is something that they they open it like do do they check the inbox they don't know when exactly someone replied.
+Salvador Morales: Yes.
+Abdullah Chaudhry: Let's say if someone just replied right now. So they will not be able to reply
+Salvador Morales: Yeah.
+Abdullah Chaudhry: until
+Salvador Morales: No. And this gets like uh refresh like about every hour. So it's not like you can go there and just like refresh and see what they are like all the replies. But you know actually the the most of the time is Matt the one who goes in here and
+Abdullah Chaudhry: Oh,
+Salvador Morales: like writes back or assign these people to Claudia or to Matthew. But most of the time
+Abdullah Chaudhry: got it. And what about uh these reply the inbox?
+ 
+ 
+01:00:56
+ 
+Salvador Morales: went
+Abdullah Chaudhry: This only consists the people that who who replied. These are not the ones that you just sent and they never replied, right?
+Salvador Morales: yeah know yes these are only
+Abdullah Chaudhry: These are the only and you just
+Salvador Morales: replies
+Abdullah Chaudhry: send the campaign and whenever it ends and they see how many replies and they reply to it. But do do don't we do follow-ups?
+Salvador Morales: for the campaign.
+Abdullah Chaudhry: Yeah. Let's say if you have let's say this is your open any campaign.
+Salvador Morales: Yes.
+Abdullah Chaudhry: Open any campaign and open the email that you are sending in this campaign. Open the email. Okay. So this is one, right? Well-maintained building in strong established supermarket, right? Okay.
+Salvador Morales: Yes.
+Abdullah Chaudhry: So why? So let's say you have sent this email to me. Okay, I'm I was my email was in the list and you have sent this email to me. So are we going if I'm not replying still are you going to send me a second email or
+ 
+ 
+01:02:01
+ 
+Salvador Morales: Yes. Um,
+Abdullah Chaudhry: no?
+Salvador Morales: sometimes we do this. So, we go to subsequence. Sorry. I will go to edit campaign. I go to sequence. I create a new step. So, I will write whatever like followup
+Abdullah Chaudhry: And this and what condition do you put over there? So people who open it just for them or what's what's
+Salvador Morales: Yeah.
+Abdullah Chaudhry: it
+Salvador Morales: So, so I I will write whatever you know whatever you want to say. I will
+Abdullah Chaudhry: no but oh no what's your what's your condition after one day it says wait
+Salvador Morales: just
+Abdullah Chaudhry: for one day then on the left side. Yeah. So let's say it will just it will send an email and if they don't reply then it will send another email right but what if we want to add this condition that only if
+Salvador Morales: Yes,
+Abdullah Chaudhry: they open the email then send this email after one
+Salvador Morales: it's here. One sec.
+Abdullah Chaudhry: day
+ 
+ 
+01:03:00
+ 
+Salvador Morales: setup and you go to campaign settings and you modify it here and it will be here like stop sending messages when you're lead and you can select the replies to a message you know he replies then stop clicks on the link or opens an email so if you open an email in this case I will click open an email if you open that email then I will stop sending you messages
+Abdullah Chaudhry: got it. And for every time, go back.
+Salvador Morales: Yes.
+Abdullah Chaudhry: For every time, are you sending follow-ups or sometimes you are adding it or sometimes you are just skipping it?
+Salvador Morales: Not all of the time. It depends on the campaign.
+Abdullah Chaudhry: Okay.
+Salvador Morales: But I will say,
+Abdullah Chaudhry: And
+Salvador Morales: you know, like the follow-ups we send like about 80% of the campaigns,
+Abdullah Chaudhry: the
+Salvador Morales: we will send a follow-up.
+Abdullah Chaudhry: Got it. And for each campaign, how many emails we use? We use just one email for all the uh emails in one campaign or we use multiple ones?
+ 
+ 
+01:03:58
+ 
+Salvador Morales: per contact. You mean like if we have several emails for one
+Abdullah Chaudhry: No. No. Let's say if we are if we have to send 1,000 emails,
+Salvador Morales: contact
+Abdullah Chaudhry: we have the list of thousand emails that we just uploaded. So now we will choose one email to trigger all the emails or we are going to use multiple emails to uh send the emails. Sorry,
+Salvador Morales: just one just one or I'm not sure
+Abdullah Chaudhry: we have to let's say to 2,000
+Salvador Morales: if I'ming the question do you mean if we are selecting the different email accounts that we have in here to send the email.
+Abdullah Chaudhry: sender emails would be just one or are we going to select multiple sender emails?
+Salvador Morales: Oh, multiple sender emails.
+Abdullah Chaudhry: So it it automatically decides or do we decide it?
+Salvador Morales: We decided
+Abdullah Chaudhry: So what's your criteria? Like let's say you have to send 2,000 emails. How many sender emails you would you put over
+Salvador Morales: So I will go here to setup and you see here send their accounts.
+ 
+ 
+01:04:57
+ 
+Abdullah Chaudhry: there?
+Salvador Morales: In this case I will hit edit and you know this was real estate and real estate we always send through bricks real estate campaigns. Uh so in this case I just selected all brick bricks advisors emails.
+Abdullah Chaudhry: Uhhuh.
+Salvador Morales: So you know you can see it's bricks bricks bricks bricks and I'm skipping the ma ones you know the ma ones are not checked. So you can see here bricks bricks bricks. So I'm always selecting the most uh that I can from bricks if we are sending real estate and from ma if we are sending uh businesses.
+Abdullah Chaudhry: go at it. All right. Uh uh so let's say do we know what's the limit? Let's say uh with these 11 emails how much at maximum emails I 3 days it I will I I think it will show definitely some sort of limit that how many accounts you can use for that those emails.
+Salvador Morales: Uh, how many accounts?
+Abdullah Chaudhry: Let's say we have to send 5,000 emails. Would 11 emails are going to be enough or we would be needing more
+ 
+ 
+01:06:29
+ 
+Salvador Morales: I mean, it's uh the more the better,
+Abdullah Chaudhry: emails.
+Salvador Morales: but we only have those because you have to pay for more and you know, we have a daily limit for 15 right now for some of them. Some of them have higher like 50. Uh so, you know, when they
+Abdullah Chaudhry: And it's based upon the and this this this limit is based upon the health of the email or based upon the package that we are using else and the maximum
+Salvador Morales: the health the health of the email.
+Abdullah Chaudhry: health is 50 or
+Salvador Morales: Yeah. I mean actually most planets wants it to be lower.
+Abdullah Chaudhry: 100
+Salvador Morales: So you know we have a better and healthier emails but you know it's you saw the campaign it's like a thousand emails. If we have like to send a thousand emails and our daily limit is 15 per per account, then it will take like two two weeks, three weeks to send one campaign. So yeah, that's why some of them have 50. But yeah, it will be better to have a you know a lower limit.
+ 
+ 
+01:07:31
+ 
+Salvador Morales: But yeah, it will take forever to send a campaign.
+Abdullah Chaudhry: got it.
+Salvador Morales: I mean, maybe we can get more emails. I'm not sure how expensive that is because the Matt is the one that uh you know uh does that. But you know, maybe that will be nice.
+Abdullah Chaudhry: Got it. Okay. Uh can you go back to the place that the campaigns that you have completed? Okay. And it says 33% completed. So that means the emails are being sent right now. It's not completely sent all of the emails, right?
+Salvador Morales: Yes.
+Abdullah Chaudhry: Right now it says 1,488 cents.
+Salvador Morales: Right.
+Abdullah Chaudhry: What's the total email that it has to send? Where is the total number? Okay, 2200. And since how this email is live, you have it says you have created it on 16th of April.
+Salvador Morales: Yeah.
+Abdullah Chaudhry: Oh my god,
+Salvador Morales: But
+Abdullah Chaudhry: it took one. It will take at least 20 days to complete it.
+Salvador Morales: something like that.
+ 
+ 
+01:08:54
+ 
+Abdullah Chaudhry: Oh,
+Salvador Morales: Yeah.
+Abdullah Chaudhry: okay. I think they are trying to make it more organic. That's they're
+Salvador Morales: Yeah. Yeah. That's like you know like the hook of this program you know that they are trying to look like an organic email sender
+Abdullah Chaudhry: taking
+Salvador Morales: and not like a campaign sender so we don't get block or spam. So that's why it only sends like a little bit uh well not that many emails per day. So you can see here, you know, like almost like per day it's sending like
+Abdullah Chaudhry: And what's the purple color? The opened one.
+Salvador Morales: 170
+Abdullah Chaudhry: Okay. A lot open rate is good. And what's the blue color?
+Salvador Morales: prediction.
+Abdullah Chaudhry: What's this?
+Salvador Morales: This is for tomorrow. This is tomorrow.
+Abdullah Chaudhry: Oh, okay.
+Salvador Morales: So apparently it will send 141.
+Abdullah Chaudhry: Uh, okay. Got it. And uh uh one account go scroll scroll down. One email sent. Second email.
+ 
+ 
+01:10:01
+ 
+Abdullah Chaudhry: What is this?
+Salvador Morales: I think this is the email that I just created as a test. So since we're not sending it right now,
+Abdullah Chaudhry: Uhhuh.
+Salvador Morales: this is the first step, you know, like the first email of the sequence. This will be the second one, but we haven't sent anything.
+Abdullah Chaudhry: Got it. Uh, okay. Can you please go back to the all the campaigns list? How many email campaigns we have in the queue? One, two, three. Three. One. Three are the ones that are in progress.
+Salvador Morales: Yes.
+Abdullah Chaudhry: Okay. Another one is 95% completed. Go back.
+Salvador Morales: This
+Abdullah Chaudhry: And and when did you started it?
+Salvador Morales: one.
+Abdullah Chaudhry: 8th January.
+Salvador Morales: Oh, no. But this is the first one. I think the second one is
+Abdullah Chaudhry: What do you mean by second
+Salvador Morales: Oh, like the first email.
+Abdullah Chaudhry: one?
+Salvador Morales: This is this is actually a sequence of two different emails.
+ 
+ 
+01:11:03
+ 
+Abdullah Chaudhry: Take two different sequence in one email. I don't understand this.
+Salvador Morales: No. Well, is one sequence of two emails.
+Abdullah Chaudhry: So we are going to send emails to email
+Salvador Morales: Uh, sorry.
+Abdullah Chaudhry: accounts.
+Salvador Morales: Can you Yes,
+Abdullah Chaudhry: We are going to use two email accounts to send 230 uh
+Salvador Morales: no, no.
+Abdullah Chaudhry: emails.
+Salvador Morales: We're going to send two different emails to the same lead
+Abdullah Chaudhry: Oh,
+Salvador Morales: list.
+Abdullah Chaudhry: we are going to send two. Okay. So, for each lead, we are going to contact them from two different accounts.
+Salvador Morales: No, it will be from the same account, but we will send two emails.
+Abdullah Chaudhry: So, it's like more follow-up email.
+Salvador Morales: It's like a follow-up email. Yeah, just like the the original one and then I'll follow up if they don't know open the original
+Abdullah Chaudhry: And we will so the follow-up will
+Salvador Morales: one.
+Abdullah Chaudhry: be from a different email.
+Salvador Morales: It will be from the same email
+Abdullah Chaudhry: No, let's say I have received an email from S. Second email that I'm going to receive would it from the same email or a different email?
+ 
+ 
+01:12:13
+ 
+Salvador Morales: from the same
+Abdullah Chaudhry: So then why do we why we using two email accounts? just to divide like let's say 100 uh will be sent from one email.
+Salvador Morales: Yeah. Yeah.
+Abdullah Chaudhry: Okay.
+Salvador Morales: To divide and
+Abdullah Chaudhry: But this one is right. Okay. Go back. Go back.
+Salvador Morales: conquer.
+Abdullah Chaudhry: This one is just 230 emails to and the other one was uh around 2,000 email. This one. No,
+Salvador Morales: Yeah.
+Abdullah Chaudhry: the first
+Salvador Morales: Yeah. No,
+Abdullah Chaudhry: one.
+Salvador Morales: I think that you know this one is still working because the I don't know how to say they stepping each other toes you know. So if we are using the email accounts to send a bunch of emails to these guys then this one will suffer because we are using our limit with the other
+Abdullah Chaudhry: Got it. But my question is go back to the top.
+Salvador Morales: one.
+Abdullah Chaudhry: So my question would be the previous one that you have shown me for from the 8th January that we are going to send emails and we are sending them from two accounts, right?
+ 
+ 
+01:13:14
+ 
+Salvador Morales: Now we're sending it from more than two accounts like from 11 something like
+Abdullah Chaudhry: two.
+Salvador Morales: that.
+Abdullah Chaudhry: But why? Open this one. Open the first one. Open the first one.
+Salvador Morales: This
+Abdullah Chaudhry: Yes, this one. Yes. Scroll to the bottom.
+Salvador Morales: one.
+Abdullah Chaudhry: Right now, it shows you two emails. The second one you are saying this is just a dummy one that we have created.
+Salvador Morales: Yes.
+Abdullah Chaudhry: One sequence email. The first one.
+Salvador Morales: This
+Abdullah Chaudhry: This one.
+Salvador Morales: one.
+Abdullah Chaudhry: But but the other one was just 230 emails and it has two emails. I don't understand what's this one the sequence one because this one right now is a bigger bigger list of emails.
+Salvador Morales: Yes.
+Abdullah Chaudhry: It has 2,000 emails and we are using one email in sequence but other one is just 200 emails fewund leads list and we are using two emails account for this.
+Salvador Morales: for the other one.
+Abdullah Chaudhry: Yeah. What's why why is that?
+ 
+ 
+01:14:13
+ 
+Abdullah Chaudhry: So
+Salvador Morales: I think we are using more than two email accounts for the other one. Like let me open it.
+Abdullah Chaudhry: the one that is 95%.
+Salvador Morales: Yes,
+Abdullah Chaudhry: Go to the bottom. See it has two emails
+Salvador Morales: but these are not email accounts. These are the emails that we've sent.
+Abdullah Chaudhry: and
+Salvador Morales: So, this is like the original email and this is the follow-up email.
+Abdullah Chaudhry: Oh, I'm sorry. I forgot. So, sequence one is a follow-up email. And why why don't we why are not we using the follow-up email in the first campaign that we are currently
+Salvador Morales: Yeah,
+Abdullah Chaudhry: running.
+Salvador Morales: I just haven't created it. I mean, we can use an a followup, but I haven't created it.
+Abdullah Chaudhry: Oh, okay. That's why it was creating confusion for me. So, this one is the follow-up email and the follow-up emails goes into the same thread of the email or it creates its own email.
+Salvador Morales: No, it's the same one.
+ 
+ 
+01:15:07
+ 
+Abdullah Chaudhry: So it's it's it's it's it sends an email in the same
+Salvador Morales: Yeah. So,
+Abdullah Chaudhry: thread.
+Salvador Morales: the idea is that the receiver would see will see it as a like as a respond to the first email. So,
+Abdullah Chaudhry: Got
+Salvador Morales: they will have both emails in one like you know one one sequence.
+Abdullah Chaudhry: it.
+Salvador Morales: I'm not sure how to say it, but
+Abdullah Chaudhry: Got it. Yeah. Yeah. I I got your point. And have we uploaded uh all of the email accounts that we are using,
+Salvador Morales: yeah.
+Abdullah Chaudhry: do they have pictures on their profiles when they receive into the inbox or they don't have pictures?
+Salvador Morales: They
+Abdullah Chaudhry: Okay.
+Salvador Morales: don't
+Abdullah Chaudhry: But we we attach pictures manually like you have attached the pictures of in the email body but not profile picture.
+Salvador Morales: exactly
+Abdullah Chaudhry: Okay. And how long we are on smart lead?
+Salvador Morales: Uh, you mean how long have we been using this? I don't know.
+ 
+ 
+01:16:05
+ 
+Abdullah Chaudhry: Yes.
+Salvador Morales: Maybe, you know, it's not that long ago. Maybe maybe like six months.
+Abdullah Chaudhry: And we are getting good response from
+Salvador Morales: Uh yeah,
+Abdullah Chaudhry: it.
+Salvador Morales: we I think we it's better than the previous uh program that we used to use active
+Abdullah Chaudhry: What have we used earlier? Active campaign.
+Salvador Morales: campaign.
+Abdullah Chaudhry: What's the biggest uh benefit that you see this tool has and the active campaigns don't really have that?
+Salvador Morales: So active campaign don't have like doesn't have like the AI sending stuff. So it will just send everything you know in one hit. Um that will damage our reputation and a lot of time we will go to a spam and stuff like that with these ones in it since it's sending the campaigns uh you know within daily limits and from different servers. Yeah, I think we have like a better rate of actually hitting the person and not just going to a spam.
+Abdullah Chaudhry: Got it. And we right now we are sending same message in one email campaign.
+ 
+ 
+01:17:12
+ 
+Abdullah Chaudhry: Right. Okay. And right now I can see sometimes uh on the right side it it says where it says
+Salvador Morales: Yes.
+Abdullah Chaudhry: uh two sequence, two sequence, one sequence, one sequence, three sequence, right? Uh for each.
+Salvador Morales: Yes.
+Abdullah Chaudhry: So these are the follow-up emails that you did set up for each email.
+Salvador Morales: Exactly.
+Abdullah Chaudhry: And what's the maximum that we can do?
+Salvador Morales: I have no idea. I'm not sure if there's a maximum,
+Abdullah Chaudhry: Okay.
+Salvador Morales: but I'm not
+Abdullah Chaudhry: Okay. Okay. Got it.
+Salvador Morales: sure.
+Abdullah Chaudhry: And what did what what does this word means? Uh uh cotton on on Hudson the second word local business owners the second email campaign name
+Salvador Morales: Uh yeah, Croton Hudson is a it's a county in New York.
+Abdullah Chaudhry: and similarly the other one above is county name. So we are mentioning the county names uh as email campaign names so that we understand which county we have used.
+Salvador Morales: Yes.
+Abdullah Chaudhry: But why don't we also mention the name of the businesses in the email marketing campaign so that we can understand what sort of uh audience we have targeted in this email campaign.
+ 
+ 
+01:18:27
+ 
+Salvador Morales: Uh I mean we could I mean we just haven't done it like yeah I
+Abdullah Chaudhry: Is this
+Salvador Morales: mean if it would be better you know in general for the team to understand it because right now I'm the only person using this so I you know I know I know it and I get it and I know like you know everything behind this but yeah as more people start working on this it will be better to have a better
+Abdullah Chaudhry: right? Yeah. It's because you are working on it and you know everything of it. Even if you mention 1 2 3, you should be able to still remember what you have done in this,
+Salvador Morales: Yeah,
+Abdullah Chaudhry: right? Okay.
+Salvador Morales: exactly.
+Abdullah Chaudhry: Uh at the end of this column it says uh positive reply positive reply and then one and two. So the ones that doesn't show any number that means we didn't got any reply from it
+Salvador Morales: Yes.
+Abdullah Chaudhry: right.
+Salvador Morales: I mean here we have eight replies 240 12 I'm not sure how this program
+ 
+ 
+01:19:24
+ 
+Abdullah Chaudhry: Oh okay.
+Salvador Morales: classifies these positive replies but the actual these
+Abdullah Chaudhry: So positive yeah the positive replies it's it's just going to classify if the person is really interested then
+Salvador Morales: ones
+Abdullah Chaudhry: it might consider it positive
+Salvador Morales: yeah but that's you know like the program might think a positive reply is like you know whatever we don't think is
+Abdullah Chaudhry: reply
+Salvador Morales: a positive reply so it might lie a little bit I'm not sure how this thing gets classified
+Abdullah Chaudhry: it scroll more to the right bounced sender bounced okay one quick question so once say uh unsubscribe us right this do you get the option to unsubscribe.
+Salvador Morales: Yes.
+Abdullah Chaudhry: So this this tool will automatically unsubscribe it and if
+Salvador Morales: Yes.
+Abdullah Chaudhry: next time that we send again an email to that person would it send it or
+Salvador Morales: It won't
+Abdullah Chaudhry: no and what what is the list that we have unsubscribed? Do we have the list of
+Salvador Morales: Uh, no. I think we can go.
+Abdullah Chaudhry: it?
+Salvador Morales: No, I'm not sure.
+ 
+ 
+01:20:26
+ 
+Salvador Morales: I know there's a way to get those those emails, but I will have to get back to you on that because I'm not really sure.
+Abdullah Chaudhry: Now what what is this trigger logs? Can you go to it? Trigger logs. I think this is the one that is it is showing us that at what time how many emails it sent like all the activity that is doing behind the scenes.
+Salvador Morales: Yeah. Yeah. I think it's like showing us like the patch sense and all
+Abdullah Chaudhry: Yeah.
+Salvador Morales: that.
+Abdullah Chaudhry: The last 20 trigger status upcoming trigger.
+Salvador Morales: Yeah.
+Abdullah Chaudhry: Got it. Got it. And once uh this is probably going to be the last question. So once uh you have a list from out scraper you filter the
+Salvador Morales: Yes.
+Abdullah Chaudhry: data uh the data that is good based upon uh the website that you have shown me like we verify the emails get back to smart lead run the campaign and you wait for Claudia to give the sheet back like whenever she get gives you back the sheet then again you use the sheet uh do the same process
+ 
+ 
+01:22:04
+ 
+Salvador Morales: Yeah, I verify again everything and just just dig that
+Abdullah Chaudhry: okay verify it First you got it. Okay. And how per day and each day like you this is your
+Salvador Morales: information.
+Abdullah Chaudhry: job. The first thing that you would do is go to outscraper download the sheet filter it half of it send to cla uh Diana half of it you use it and then Diana sends you the same sheet in the same day or next day. What
+Salvador Morales: Yeah, I mean it depends because you know sometimes I give her give her a sheet of a 100 persons and then sometimes it's a thousand
+Abdullah Chaudhry: happens
+Salvador Morales: people. So it's it really depends a lot of like the information that we're
+Abdullah Chaudhry: and how do you let's say we have gone to uh
+Salvador Morales: searching.
+Abdullah Chaudhry: automotive uh for uh 110 uh Oliver Avenue Westchester owners right so half of it you have this is let's say this is the campaign that choose sent without uh Diana's verification. This is the this is the one that you verified uh with your own data, right?
+ 
+ 
+01:23:10
+ 
+Abdullah Chaudhry: So this this is the email that you already triggered once once uh Diana gives back to
+Salvador Morales: Yes.
+Abdullah Chaudhry: you, right? It it is it is the same address in the same niche that you just have to add the data, right?
+Salvador Morales: Yes.
+Abdullah Chaudhry: So, is is it possible to just open this one and add more leads into it or you run a new campaign for
+Salvador Morales: I usually run a new one.
+Abdullah Chaudhry: it?
+Salvador Morales: I think it's possible to just add more information in here, but I usually run a new one just to get more, you know, just to be more clear on what I've done because, you know, I can add more people in here, but then I will lose track of what I already sent and what I haven't sent and stuff like that. So, I prefer just to run a new one.
+Abdullah Chaudhry: And do we have any idea of what's the accuracy of the data that you are using directly and the one that is has been filtered by
+Salvador Morales: not really in the program that we used to have before this one.
+ 
+ 
+01:24:15
+ 
+Salvador Morales: I actually like download all the reports and compare like what I've sent with versus what they receive, you know, like the accuracy of the sending process. And that's how I'm kind of you know get an idea of the accuracy of the of the of the data. But you know I haven't done it in here.
+Abdullah Chaudhry: H
+Salvador Morales: I think that's something that we have to start doing already
+Abdullah Chaudhry: got it. And this email campaigns scroll back to the end. How many email campaign do we have?
+Salvador Morales: here.
+Abdullah Chaudhry: Uh yeah. Okay. We have a lot. Okay. I thought we had just have 10. Okay. Got it. So almost on daily basis you how oftenly do you run it for mava business and how oftenly do you run it for
+Salvador Morales: it's been it's been shifting you know because when we started we were more focused on bricks right now because
+Abdullah Chaudhry: bricks.
+Salvador Morales: market and stuff we are more focused on mala so I will say like right now from all the campaigns that we sent 80% are mala and just like 20% are bricks
+ 
+ 
+01:25:24
+ 
+Abdullah Chaudhry: Okay, got it. And that does that mean on daily basis almost on daily basis you send one email
+Salvador Morales: No,
+Abdullah Chaudhry: campaign.
+Salvador Morales: I mean the idea Matt wants us to be more consistent on that because we've like kind of focus on other stuff and haven't sent as many campaigns as we would like. But uh this is not my daily job you know I have to do some other stuff and it's not like I do this uh on a daily basis. So you know what Matt wants to achieve is to be more consistent in this thing because uh we you know last week I think we only send like one email campaign and this one I will send like three new ones. Uh yeah, but you know it's a little bit of a hit on a
+Abdullah Chaudhry: Got it. So, okay.
+Salvador Morales: miss.
+Abdullah Chaudhry: Uh, thank you so much Z for all of this information. uh you have mentioned you are busy with other stuff like quickly can you go me through uh like even screen sharing is going to be a great option like what what else you do on daily basis like what's your most important thing
+ 
+ 
+01:26:41
+ 
+Salvador Morales: most important thing is like when we receive information of new businesses uh I have to do the valuation and do all the marketing stuff you know like the things that we will send to to possible buyers. So for example I also do uh all these things for refinances. So right now I have to work just to let you know a little bit you know I have to go over all the information that I received from um borrower that we are working on the refinance of his property. So I have to you know go through bank information uh field paperwork go through the paperwork that I received for from the warware to see that everything is like in place you know and within the same story that nothing is like uh telling a different thing that we want to tell to the bank and send all that information to the bank. So for example this is a thing that we are working right now. So we received the term sheet from the bank. I I send this term sheet for you know to the borrower.
+ 
+ 
+01:27:45
+ 
+Salvador Morales: So he goes over like all the different like aspects of the deal. If he agrees then well he already agreed so he already sent me the same LOI letter of intent it's called and then I have to like start gathering all these papers for him. Sometimes they will send it sometimes I have to say uh help them. So
+Abdullah Chaudhry: Uh so uh Max uh sorry Sal it would be great if you if you can slow down because uh it's a really I think complicated process for me as a new to understand it. Uh can you explain like in easy words like when you said that you work with uh uh like all the finance stuff right estimations did you mention that what is this?
+Salvador Morales: Yes.
+Abdullah Chaudhry: What is that? Like what's your once you wake up like what's your top priority to look into the uh the work?
+Salvador Morales: I mean for example this is just a part know this is like uh this is just a part this is um for refinances.
+Abdullah Chaudhry: What's that?
+Salvador Morales: So basically uh so this guy this is the borrower.
+ 
+ 
+01:28:50
+ 
+Abdullah Chaudhry: Yeah.
+Salvador Morales: So this is our client Andre. So we want he wants a new mortgage for one of the properties that he owns. So basically he sent us the information the financial information of the building. We cleaned that up. Well, we cleaned that up create like a one pager that then I will send to different
+Abdullah Chaudhry: Okay.
+Salvador Morales: banks to try to get him like you know the best deal possible that we can get. In this case he decided to go with this bank self-reliance financial bank institution. So when we say let's go with these guys, this guy will send us this a term sheet. It's just an overview of how the mortgage will go. You know, you will see here the rate how much they will lend him. LTV is loan to value. So they will lend him 70% of what his property is worth. So it's the property is worth a million dollars. They will net him 1750k and you know a bunch of stuff you know regarding the the deal but then I will send this to
+ 
+ 
+01:29:57
+ 
+Abdullah Chaudhry: Okay.
+Salvador Morales: the borrower. The borrower is our client Andrew. If he agrees he will send it back signed and then we will have to go through all the process of uh you know gathering information for the bank you know it's it it varies it goes it's a little bit different depending of each bank but you know we have to gather all this information so you can see here that I sent Andre our client a list of things that we need to send to the bank this is just like official documents ments that the bank asks for here is Andrew sending me all this information. Right now I have to go over all this information to see that everything you know it's like okay you know just to verify that everything is like fully
+Abdullah Chaudhry: All right.
+Salvador Morales: fully executed as the bank will ask for it. Uh here are more documents that I also have to go over and
+Abdullah Chaudhry: And do you go through all these documents manually or you are using the help of AI?
+ 
+ 
+01:31:10
+ 
+Salvador Morales: Um, I mean, these ones I go over manually because, for example, this is just like a lease, a contract to one of the persons that lives in the building. So, I I just see, you know, like the date of the lease, the ending, and the monthly rent. And I just compare that these numbers are the one that we share previously with the bank. It's not like I'm reading everything. So I you know I just like look for various specific stuff in each one of the papers each one of the documents and
+Abdullah Chaudhry: Uh-huh.
+Salvador Morales: it's different stuff that I need to search the the different ones. Uh but yeah basically it's just go over all this information uh to send uh to the bank and you know it's a back and forward always you know sometimes the bank says like hey this is wrong and then we have to say no it's actually right or then we have to modify it or you know it's just like a back and forward process with the
+Abdullah Chaudhry: And what is our relationship with the
+ 
+ 
+01:32:04
+ 
+Salvador Morales: bank. I mean, Matt knows some of these guys, you know, with this bank, we already work a couple, maybe three or more refinances, so they know us. Uh, but yeah, it depends a lot with the banks, you
+Abdullah Chaudhry: So refinances means uh that if someone wants to put his
+Salvador Morales: know.
+Abdullah Chaudhry: property like if I own a property and I want to put it on a lease. Oh, sorry, on mortgage. Then I make a deal with bank. Okay.
+Salvador Morales: Yes,
+Abdullah Chaudhry: So, why do they need to involve Matt? Why don't they directly go to the bank?
+Salvador Morales: just to save time because we go and contact different banks think that they don't and you know I have to go through all the documents the ones that you just see uh you just saw and they just don't want to do that so they hire someone to do that.
+Abdullah Chaudhry: Okay. And these are from uh the bricks company.
+Salvador Morales: Yes. So that's from
+Abdullah Chaudhry: So basically you what you do mainly do is you handle the existing
+ 
+ 
+01:33:17
+ 
+Salvador Morales: brakes.
+Abdullah Chaudhry: clients and you help them to refinance. So you are basically a mediator between the banks and the existing clients.
+Salvador Morales: Yeah. I mean that's one line of work. Uh, for example, you can see my screen. So, right now, Matt is asking me for the package from Central Tire. So, let me show you. I think send him. Let me show you that package. So, this is another thing that I have to do. It's like my job is to do a little bit of everything, you know. So, this is a business that we are trying to sell.
+Abdullah Chaudhry: Hi.
+Salvador Morales: So, I created this package, this presentation. This is a package that we will send to potential buyers. So I have to create create all this stuff. You can see here like a general overview of the different properties because this is uh both ways. You know they can buy the property and also buy the business or maybe just buy the business.
+ 
+ 
+01:34:12
+ 
+Abdullah Chaudhry: Mhm.
+Salvador Morales: You know there's like different place in here but since this is also like the owner of the business is also owner of the land we put here like all the information of the land because you know buy it if you like and here is just like a general overview of this uh business
+Abdullah Chaudhry: H
+Salvador Morales: has like a good year franchise contract. So here we just talk about the franchise. This is an overview of how the business works. Uh so it's a multiple location business. That's why you see different addresses. But this is sold as a package. So that's why everything is in just one big presentation. You can see here payroll. You can see like all the business analysis. So they send us their tax returns and from the tax returns I do the valuation. So this valuation I took all this information from the tax return just clean it. I put it in here. There's one tax
+Abdullah Chaudhry: And do do you all do you like do you have any tool that helps you do all the do all the calculations or are you doing it manually?
+ 
+ 
+01:35:25
+ 
+Salvador Morales: I mean, I already have a template in Excel that I created. So, I just move the numbers and I have to tweak a little bit sometimes the the concepts in here because it's not always the same. But, you know, like the general overview, like the general template, I use the one that I created.
+Abdullah Chaudhry: Do you have to have a like a finance background to do this or with just years of experience you have learned
+Salvador Morales: I just learned it working here. I don't have a finance background.
+Abdullah Chaudhry: Okay.
+Salvador Morales: I'm an architect,
+Abdullah Chaudhry: Okay.
+Salvador Morales: actually.
+Abdullah Chaudhry: So, what do you do related to architect in this job?
+Salvador Morales: Nothing, man.
+Abdullah Chaudhry: Okay. Okay. Okay.
+Salvador Morales: Yeah,
+Abdullah Chaudhry: I thought maybe it's a real estate and you do something related to
+Salvador Morales: but No,
+Abdullah Chaudhry: it.
+Salvador Morales: no, actually I I don't. But yeah, I mean it's nice, you know, to do something different, but I mean, yeah, it's just like basically, yeah, I get the tax returns.
+ 
+ 
+01:36:26
+ 
+Salvador Morales: I translate the tax returns to these valuations. This is just like a package valuation. So, it's just like a summary of the three different locations. You know, you can see here the summary uh just like the portfolio locations, you know, a map where you can see where the different franchises are located. More maps and yeah, like the cover, the cover, the back cover, but this was this is, you know, some other stuff that I have to do.
+Abdullah Chaudhry: And this is the the all this the the format of this presentation. It's every time same for a new business or do you change it every
+Salvador Morales: You know,
+Abdullah Chaudhry: time?
+Salvador Morales: the format is kind of the same. You know, we always have like, you know, title on top, uh, the logo, our names in here.
+Abdullah Chaudhry: And how oftenly do you have to create this? Like once in a
+Salvador Morales: I do this maybe. Uh, it depends on how many listings we get because I do one or two of these for each
+ 
+ 
+01:37:21
+ 
+Abdullah Chaudhry: week.
+Salvador Morales: listing. But yeah, I mean you average maybe yeah one or two per week. Maybe one.
+Abdullah Chaudhry: So,
+Salvador Morales: I
+Abdullah Chaudhry: so one or two in a week that means we are converting one or
+Salvador Morales: mean
+Abdullah Chaudhry: two uh businesses every week. So they so they contact with us and they want to sell their business through
+Salvador Morales: kind of because you know this is a version of one leaf that we already converted and we have a
+Abdullah Chaudhry: us.
+Salvador Morales: listing. you know, we already signed a contract to sell this thing, but then I also have to do this stuff to leads that we haven't convert. So, Matt will take the presentation like this to the lead to convince them, convince them of uh signing a contract with us.
+Abdullah Chaudhry: Oh. Oh, got it.
+Salvador Morales: So
+Abdullah Chaudhry: So it's not it's not every time that we are going to show this to the
+Salvador Morales: there
+Abdullah Chaudhry: uh buyers. We sometime oh no uh not to the uh converted lead.
+ 
+ 
+01:38:22
+ 
+Abdullah Chaudhry: Sometimes M just take it to the potential buyer to see to to tell them that this is the business and you know uh that's how you can earn from
+Salvador Morales: yeaheneral yeah he will share him with him like a general plan a general
+Abdullah Chaudhry: it.
+Salvador Morales: idea of the numbers of how many well how much he can get for the business and stuff like that you know it will be kind of similar to the thing that you're looking in here but you know we won't have as many information as we do after we sign the so for these ones so it's like a lighter version of this package
+Abdullah Chaudhry: Got it. Got it.
+Salvador Morales: and that's another thing uh but yeah man I mean my job is
+Abdullah Chaudhry: Okay.
+Salvador Morales: like to do a little bit of everything for example If we go to central tire, that's the business that you were looking the package. I also have to so for example, I have this is the valuation that I talked to you about. So I get the tax returns and I have to do these numbers.
+ 
+ 
+01:39:28
+ 
+Salvador Morales: Uh so yeah, I have to work on this for new listings and for new leads because you know we also want to go to the lead and tell them like hey your business will be worth x amount of money. Do you want to sell it? Uh stuff like that you know it's a little bit of everything. I have to do the I have to do the agreements for example. So this is the agreement we sent to this guy. So I have to do this uh I have to do I don't
+Abdullah Chaudhry: Got it. Got it. Got it. That's enough for today because I have to absorb it and then I can get back to you.
+Salvador Morales: know.
+Abdullah Chaudhry: Can you also share me any of the even previous uh listings or any any previous presentation that you have created
+Salvador Morales: You mean the one that is to convince them?
+Abdullah Chaudhry: you have yeah you have that you have shown me any of it and it can be even from the past that if if you're concerned about the data needs to be really protected then you can even send me from the past it doesn't needs to
+ 
+ 
+01:40:37
+ 
+Salvador Morales: Oh, you want do you want me to send you the the presentation
+Abdullah Chaudhry: Sorry.
+Salvador Morales: or what?
+Abdullah Chaudhry: Yeah. Yeah. Presentation.
+Salvador Morales: Oh, sure, sure, sure. Yeah, no problem.
+Abdullah Chaudhry: I think it's in the common uh drive. Do I have to access these sheets? No, maybe not.
+Salvador Morales: you are you in the drive?
+Abdullah Chaudhry: Yes, I am in the drive.
+Salvador Morales: Oh yeah, I you know you will find the drive presentations like all the presentations but if you want I can show you like the link to one of these so you don't have to be uh you know fishing in the drive for example this one is different as you can see but this one was to present to the owner of this business. So that's why you will see here like the different valuation you know like cap rate and different asking prices that we can get for him. Uh, and this one is shorter because we don't have that many information before we sign a contract. So, this one is more like general information and stuff, but I can share this one for example.
+ 
+ 
+01:41:38
+ 
+Salvador Morales: I mean, everything that I've just showed you is in the drive, but maybe I can share so you don't have to go to the drive and,
+Abdullah Chaudhry: Yeah.
+Salvador Morales: you know, waste your time searching for them.
+Abdullah Chaudhry: Thank you. All right. Uh thank you so much S uh for giving me such details. Uh I hope to bother you again very time soon. Maybe not tomorrow but maybe on Monday or Tuesday. Uh so because I'm really into the the especially the campaigns part and see what else I can help you with. So basically my background is uh a programmer uh tech guy. So I have experience in the little bit of everything like programming, automation and these sort of stuff. So my job is to make your life easier and to get the most efficiency out of
+Salvador Morales: Awesome.
+Abdullah Chaudhry: the workflow that we do. So that's why I'm here and I will bother you again to give me uh more details next time.
+Salvador Morales: No worries. I'm just like, you know, feel free to ask me whatever you need. So, yeah.
+Abdullah Chaudhry: Thank you so much Al. You were really cooperative. Thank you.
+Salvador Morales: Thank you. See you. Have a good one.
+Abdullah Chaudhry: Stay soon. Bye.

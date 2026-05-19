@@ -1,0 +1,46 @@
+<div class="enrichment-services" data-enrichment-services>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <span class="small text-muted" data-selected-count>
+      {% if widget.selected %}{{ widget.selected|length }} selected{% else %}None selected{% endif %}
+    </span>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-primary" data-select-recommended>
+        Select recommended
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-clear-services>
+        Clear all
+      </button>
+    </div>
+  </div>
+  <div class="enrichment-grid row g-2">
+    {% for service in widget.services %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <label class="service-card{% if service.id in widget.selected %} selected{% endif %}"
+             data-service-card data-service-id="{{ service.id }}">
+        <input type="checkbox"
+               class="service-card-input"
+               name="{{ widget.name }}"
+               value="{{ service.id }}"
+               {% if service.id in widget.selected %}checked{% endif %}>
+        <div class="service-card-header">
+          <div class="service-card-title">
+            <span class="service-card-icon"><i class="bi {{ service.icon }}"></i></span>
+            <span>{{ service.title }}</span>
+          </div>
+          <span class="service-card-check" aria-hidden="true"><i class="bi bi-check-lg"></i></span>
+        </div>
+        <div class="service-card-body">{{ service.description }}</div>
+        <div class="service-card-footer">
+          <div class="service-card-price">
+            <span class="price">{{ service.price }}</span><span class="unit">{{ service.unit }}</span>
+          </div>
+          {% if service.recommended %}
+          <span class="service-card-badge">Recommended</span>
+          {% endif %}
+        </div>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{{ widget.recommended_ids|json_script:"enrichment-recommended-ids" }}

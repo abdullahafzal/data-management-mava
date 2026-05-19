@@ -1,0 +1,208 @@
+{% extends "pipeline/base.html" %}
+{% load pipeline_extras %}
+{% block title %}Results — {{ data_import.campaign.name }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_list' %}">Campaigns</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'pipeline:campaign_detail' pk=data_import.campaign_id %}">{{ data_import.campaign.name }}</a></li>
+    <li class="breadcrumb-item active">Automatic results</li>
+  </ol>
+</nav>
+
+<div class="alert-banner-success mb-4">
+  <div class="d-flex align-items-start gap-3">
+    <i class="bi bi-check-circle-fill text-success fs-3"></i>
+    <div>
+      <h1 class="h5 mb-1">Automatic processing complete</h1>
+      <p class="mb-0 small text-muted">{{ data_import.cleaned_dataset.row_count }} rows · {{ columns_used|length }} columns kept from preset</p>
+    </div>
+  </div>
+</div>
+
+<div class="card-app mb-4">
+  <div class="card-app-header"><h2><i class="bi bi-funnel me-2 text-primary"></i>Outscraper filters used</h2></div>
+  <div class="card-body">
+    <ul class="meta-list mb-0">
+      <li><span class="meta-key">Category</span><span class="meta-val">{{ data_import.outscraper_category }}</span></li>
+      <li><span class="meta-key">Locations</span><span class="meta-val">{{ data_import.outscraper_location|location_display }}</span></li>
+      {% if data_import.outscraper_max_results %}
+      <li><span class="meta-key">Max results</span><span class="meta-val">{{ data_import.outscraper_max_results }}</span></li>
+      {% endif %}
+      {% if data_import.advanced_display_lines %}
+      <li>
+        <span class="meta-key">Advanced</span>
+        <span class="meta-val small">
+          {% for key, val in data_import.advanced_display_lines %}{{ key }}: {{ val }}{% if not forloop.last %} · {% endif %}{% endfor %}
+        </span>
+      </li>
+      {% endif %}
+      {% if data_import.outscraper_services %}
+      <li>
+        <span class="meta-key">Services</span>
+        <span class="meta-val">
+          {% for label in data_import.service_labels %}<span class="tag-pill">{{ label }}</span>{% endfor %}
+        </span>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card-app">
+      <div class="card-app-header"><h2><i class="bi bi-download me-2"></i>Your files</h2></div>
+      <div class="card-body">
+
+        {# 1. Cleaned dataset #}
+        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+          <h3 class="pipeline-file-step-title">
+            <span class="pipeline-step-num">1</span> Cleaned dataset
+          </h3>
+          <p class="text-muted small mb-2">{{ data_import.cleaned_dataset.row_count }} rows · preset columns</p>
+          <a href="{% url 'pipeline:download_cleaned' import_pk=data_import.pk %}" class="btn-download">
+            <span class="btn-download-icon green"><i class="bi bi-filetype-csv"></i></span>
+            <span>
+              <div class="btn-download-title">Download cleaned CSV</div>
+              <p class="btn-download-desc">Ready for verification and campaigns</p>
+            </span>
+          </a>
+        </section>
+
+        {# 2. MillionVerifier #}
+        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+          <h3 class="pipeline-file-step-title">
+            <span class="pipeline-step-num">2</span> MillionVerifier
+          </h3>
+          <p class="text-muted small mb-2">Verify emails and split into good, risky, invalid, and other categories.</p>
+
+          {% if verification_job and verification_job.status == 'completed' %}
+          <div class="alert alert-success alert-app d-flex align-items-center gap-2 mb-2 py-2">
+            <i class="bi bi-check-circle-fill"></i>
+            <span class="small">Split complete · {{ verification_job.completed_at|date:"M j, Y" }}</span>
+          </div>
+          {% for export in verification_job.exports.all %}
+          <a href="{% url 'pipeline:download_verification_export' export_pk=export.pk %}" class="export-list-item">
+            <span class="text-capitalize fw-medium"><i class="bi bi-file-earmark-text me-2"></i>{{ export.category }}</span>
+            <span class="export-count">{{ export.row_count }} rows</span>
+          </a>
+          {% endfor %}
+          <a href="{% url 'pipeline:download_verification_zip' import_pk=data_import.pk %}" class="btn btn-outline-primary btn-sm mt-2 mb-2">
+            <i class="bi bi-file-zip me-1"></i> Download all as ZIP
+          </a>
+          {% elif verification_job and verification_job.status == 'failed' %}
+          <div class="alert alert-danger alert-app mb-2 py-2 small">{{ verification_job.error_message }}</div>
+          {% endif %}
+
+          <button type="button" class="btn btn-app-primary"
+                  data-api-modal
+                  data-api-title="MillionVerifier"
+                  data-api-message="MillionVerifier API is missing.">
+            <i class="bi bi-shield-check me-1"></i> Verify from MillionVerifier
+          </button>
+        </section>
+
+        {# 3. Phone verifier #}
+        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+          <h3 class="pipeline-file-step-title">
+            <span class="pipeline-step-num">3</span> Phone verifier
+          </h3>
+          <p class="text-muted small mb-2">Validate phone numbers before SMS or calling campaigns.</p>
+          <button type="button" class="btn btn-outline-primary"
+                  data-api-modal
+                  data-api-title="Phone verifier"
+                  data-api-message="API is missing.">
+            <i class="bi bi-telephone me-1"></i> Verify the phone number
+          </button>
+        </section>
+
+        {# 4. Diana #}
+        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+          <h3 class="pipeline-file-step-title">
+            <span class="pipeline-step-num">4</span> Diana
+          </h3>
+          <p class="text-muted small mb-2">Rows missing email and/or phone — for manual enrichment.</p>
+          <a href="{% url 'pipeline:download_diana' import_pk=data_import.pk %}" class="btn-download">
+            <span class="btn-download-icon amber"><i class="bi bi-send"></i></span>
+            <span>
+              <div class="btn-download-title">Diana queue CSV</div>
+              <p class="btn-download-desc">Includes diana_reason column</p>
+            </span>
+          </a>
+        </section>
+
+        {# 5. Original #}
+        <section class="pipeline-file-step mb-0">
+          <h3 class="pipeline-file-step-title">
+            <span class="pipeline-step-num">5</span> Original
+          </h3>
+          <p class="text-muted small mb-2">Full Outscraper export as uploaded.</p>
+          <a href="{% url 'pipeline:download_original' import_pk=data_import.pk %}" class="btn-download">
+            <span class="btn-download-icon slate"><i class="bi bi-file-earmark"></i></span>
+            <span>
+              <div class="btn-download-title">Original Outscraper file</div>
+              <p class="btn-download-desc">Unmodified upload</p>
+            </span>
+          </a>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-app">
+      <div class="card-app-header"><h2><i class="bi bi-layout-text-sidebar me-2"></i>Columns used</h2></div>
+      <div class="card-body">
+        <p class="small text-muted">{{ columns_used|join:", " }}</p>
+        {% if missing_columns %}
+        <hr>
+        <p class="small fw-semibold mb-1">Not in file (skipped)</p>
+        <p class="small text-muted mb-0">{{ missing_columns|join:", " }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="apiMissingModal" tabindex="-1" aria-labelledby="apiMissingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold" id="apiMissingModalLabel">API not available</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="d-flex gap-3">
+          <i class="bi bi-exclamation-circle text-warning fs-3"></i>
+          <p class="mb-0 small text-muted" id="apiMissingModalBody"></p>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-app-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <a href="{% url 'pipeline:campaign_detail' pk=data_import.campaign_id %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back to campaign
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('[data-api-modal]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const title = btn.getAttribute('data-api-title') || 'API';
+      const message = btn.getAttribute('data-api-message') || 'API is not configured.';
+      document.getElementById('apiMissingModalLabel').textContent = title;
+      document.getElementById('apiMissingModalBody').textContent = message;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('apiMissingModal')).show();
+    });
+  });
+</script>
+{% endblock %}
