@@ -83,41 +83,7 @@
       </a>
       {% endif %}
 
-      {% if preview %}
-      <div class="import-preview mt-2">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-          <p class="small fw-semibold mb-0">Outscraper data preview</p>
-          <span class="small text-muted">
-            Showing {{ preview.preview_rows }} of {{ preview.total_rows }} rows
-            · {{ preview.total_columns }} columns
-          </span>
-        </div>
-        <div class="table-preview-wrap">
-          <table class="table table-app table-preview mb-0">
-            <thead>
-              <tr>
-                {% for col in preview.headers %}
-                <th scope="col" title="{{ col }}">{{ col }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in preview.rows %}
-              <tr>
-                {% for cell in row %}
-                <td title="{{ cell }}">{{ cell|default:"—" }}</td>
-                {% endfor %}
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {% elif preview_error %}
-      <div class="alert alert-warning alert-app small mb-0 mt-2">
-        Could not load preview: {{ preview_error }}
-      </div>
-      {% endif %}
+      {% include "pipeline/includes/outscraper_preview.html" %}
     </div>
   </section>
 

@@ -147,6 +147,15 @@ def _phone_validation_configured() -> bool:
     return bool(getattr(settings, 'PHONE_VALIDATION_API_KEY', ''))
 
 
+def _load_import_preview(data_import: DataImport) -> tuple[dict | None, str]:
+    if not data_import.original_file:
+        return None, ''
+    try:
+        return preview_upload(data_import.original_file.path), ''
+    except Exception as exc:
+        return None, str(exc)
+
+
 def _process_upload_file(data_import: DataImport, uploaded_file=None) -> None:
     if uploaded_file is not None:
         data_import.original_filename = uploaded_file.name
@@ -494,11 +503,15 @@ class AutomaticResultsView(View):
                 data_import.cleaned_dataset, 'verification_job', None
             )
 
+        preview, preview_error = _load_import_preview(data_import)
+
         return render(request, 'pipeline/automatic_results.html', {
             'data_import': data_import,
             'missing_columns': missing_cols,
             'columns_used': data_import.selected_columns,
             'verification_job': verification_job,
+            'preview': preview,
+            'preview_error': preview_error,
         })
 
 
@@ -579,13 +592,7 @@ class ImportDetailView(View):
                 data_import.cleaned_dataset, 'verification_job', None
             )
 
-        preview = None
-        preview_error = ''
-        if data_import.original_file:
-            try:
-                preview = preview_upload(data_import.original_file.path)
-            except Exception as exc:
-                preview_error = str(exc)
+        preview, preview_error = _load_import_preview(data_import)
 
         return render(request, 'pipeline/import_detail.html', {
             'data_import': data_import,
