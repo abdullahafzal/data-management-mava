@@ -1,4 +1,4 @@
-from .importer import parse_upload
+from .importer import parse_upload, preview_upload
 from .cleaner import build_cleaned_csv
 from .millionverifier import split_verification_results
 from .advanced_params import pack_advanced_params
@@ -12,6 +12,7 @@ from .diana import build_diana_handoff_csv
 
 __all__ = [
     'parse_upload',
+    'preview_upload',
     'build_cleaned_csv',
     'split_verification_results',
     'OUTSCRAPER_SERVICE_CHOICES',

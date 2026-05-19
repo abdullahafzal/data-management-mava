@@ -327,6 +327,31 @@ body {
 .table-app tbody tr:hover { background: #f8fafc; }
 .table-app tbody tr:last-child td { border-bottom: none; }
 
+.import-preview .table-preview-wrap {
+  overflow: auto;
+  max-height: 28rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.import-preview .table-preview thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  white-space: nowrap;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.import-preview .table-preview tbody td {
+  white-space: nowrap;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8rem;
+}
+
 /* —— Filters panel —— */
 .filter-panel {
   background: var(--surface);

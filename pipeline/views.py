@@ -42,6 +42,7 @@ from .services import (
     find_matching_imports,
     parse_extra_tags,
     parse_upload,
+    preview_upload,
     split_verification_results,
 )
 
@@ -577,11 +578,22 @@ class ImportDetailView(View):
             verification_job = getattr(
                 data_import.cleaned_dataset, 'verification_job', None
             )
+
+        preview = None
+        preview_error = ''
+        if data_import.original_file:
+            try:
+                preview = preview_upload(data_import.original_file.path)
+            except Exception as exc:
+                preview_error = str(exc)
+
         return render(request, 'pipeline/import_detail.html', {
             'data_import': data_import,
             'verification_job': verification_job,
             'millionverifier_ready': _millionverifier_configured(),
             'phone_verifier_ready': _phone_validation_configured(),
+            'preview': preview,
+            'preview_error': preview_error,
         })
 
 
