@@ -35,6 +35,11 @@ body {
 }
 
 /* —— Nav —— */
+[id].pipeline-section,
+[id].pipeline-file-step {
+  scroll-margin-top: 1.5rem;
+}
+
 .app-nav {
   background: var(--nav-bg);
   padding: 0.75rem 0;
@@ -228,6 +233,61 @@ body {
 }
 .campaign-card-title { font-weight: 600; font-size: 1.05rem; margin: 0; }
 .campaign-card-meta { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.35rem; }
+.campaign-step-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.campaign-step-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.22em 0.55em;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.campaign-step-tag.is-pending {
+  opacity: 0.55;
+}
+
+.campaign-step-tag.is-current {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: #bfdbfe;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.campaign-step-tag.is-done {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: #a7f3d0;
+}
+
+.campaign-step-tag.is-complete {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+.campaign-step-tag.is-failed {
+  background: #fef2f2;
+  color: var(--danger);
+  border-color: #fecaca;
+}
+
+.campaign-step-note {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
 .campaign-card-footer {
   margin-top: 1rem;
   padding-top: 0.75rem;
@@ -535,4 +595,44 @@ details.enrichment-panel .enrichment-body { padding: 0 1rem 1rem; }
 
 .filter-block:first-of-type {
   padding-top: 0;
+}
+
+/* —— Page loader —— */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: rgba(241, 245, 249, 0.92);
+  backdrop-filter: blur(2px);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.page-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.page-loader-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: page-loader-spin 0.7s linear infinite;
+}
+
+.page-loader-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+@keyframes page-loader-spin {
+  to { transform: rotate(360deg); }
 }

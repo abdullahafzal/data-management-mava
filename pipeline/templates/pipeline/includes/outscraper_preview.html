@@ -1,7 +1,7 @@
 {% if preview %}
 <div class="import-preview mt-2">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-    <p class="small fw-semibold mb-0">Outscraper data preview</p>
+    <p class="small fw-semibold mb-0">{{ preview_title|default:"Outscraper data preview" }}</p>
     <span class="small text-muted">
       {% if preview.truncated_rows %}
       Showing {{ preview.preview_rows }} of {{ preview.total_rows }} rows

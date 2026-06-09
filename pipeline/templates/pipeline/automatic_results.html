@@ -57,22 +57,23 @@
       <div class="card-body">
 
         {# 1. Cleaned dataset #}
-        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+        <section id="cleaned-export" class="pipeline-file-step mb-4 pb-4 border-bottom">
           <h3 class="pipeline-file-step-title">
             <span class="pipeline-step-num">1</span> Cleaned dataset
           </h3>
           <p class="text-muted small mb-2">{{ data_import.cleaned_dataset.row_count }} rows · preset columns</p>
-          <a href="{% url 'pipeline:download_cleaned' import_pk=data_import.pk %}" class="btn-download">
+          <a href="{% url 'pipeline:download_cleaned' import_pk=data_import.pk %}" class="btn-download mb-2">
             <span class="btn-download-icon green"><i class="bi bi-filetype-csv"></i></span>
             <span>
               <div class="btn-download-title">Download cleaned CSV</div>
               <p class="btn-download-desc">Ready for verification and campaigns</p>
             </span>
           </a>
+          {% include "pipeline/includes/outscraper_preview.html" with preview=cleaned_preview preview_error=cleaned_preview_error preview_title="Cleaned data preview" %}
         </section>
 
         {# 2. MillionVerifier #}
-        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+        <section id="millionverifier" class="pipeline-file-step mb-4 pb-4 border-bottom">
           <h3 class="pipeline-file-step-title">
             <span class="pipeline-step-num">2</span> MillionVerifier
           </h3>
@@ -105,7 +106,7 @@
         </section>
 
         {# 3. Phone verifier #}
-        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+        <section id="phone-verifier" class="pipeline-file-step mb-4 pb-4 border-bottom">
           <h3 class="pipeline-file-step-title">
             <span class="pipeline-step-num">3</span> Phone verifier
           </h3>
@@ -119,7 +120,7 @@
         </section>
 
         {# 4. Diana #}
-        <section class="pipeline-file-step mb-4 pb-4 border-bottom">
+        <section id="diana" class="pipeline-file-step mb-4 pb-4 border-bottom">
           <h3 class="pipeline-file-step-title">
             <span class="pipeline-step-num">4</span> Diana
           </h3>

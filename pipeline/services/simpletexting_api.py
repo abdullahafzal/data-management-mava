@@ -135,6 +135,9 @@ def create_contact_on_lists(
     phone: str,
     list_ids: list[str],
     *,
+    email: str = '',
+    first_name: str = '',
+    last_name: str = '',
     upsert: bool = True,
     lists_replacement: bool = False,
 ) -> dict[str, Any]:
@@ -153,10 +156,16 @@ def create_contact_on_lists(
         "upsert": str(upsert).lower(),
         "listsReplacement": str(lists_replacement).lower(),
     }
-    payload = {
+    payload: dict[str, Any] = {
         "contactPhone": contact_phone,
         "listIds": list_ids,
     }
+    if email and email.strip():
+        payload["email"] = email.strip()
+    if first_name and first_name.strip():
+        payload["firstName"] = first_name.strip()
+    if last_name and last_name.strip():
+        payload["lastName"] = last_name.strip()
     try:
         r = requests.post(
             url,

@@ -5,7 +5,7 @@ import zipfile
 from django.conf import settings
 from django.contrib import messages
 from django.core.files.base import ContentFile
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -48,6 +48,10 @@ from .services.millionverifier_bulk import (
 )
 from .services.smartlead_api import SmartleadError, add_leads, create_campaign
 from .services.simpletexting_api import SimpleTextingError, create_contact_on_lists, get_or_create_list
+from .services.simpletexting_contacts import (
+    collect_simpletexting_contacts,
+    resolve_simpletexting_source,
+)
 from .services.xverify_api import XVerifyError, verify_phone
 from .services.xverify_results import build_results_csv, good_phones_from_csv_bytes, is_valid_status
 from .services.filter_context import build_analysis_context, build_analysis_context_from_filters
@@ -59,6 +63,7 @@ from .services.filters import (
     find_matching_imports,
     parse_extra_tags,
 )
+from .services.campaign_progress import build_campaign_progress
 from .services.importer import parse_upload, preview_upload
 from .services.millionverifier import split_verification_results
 from .services.advanced_params import pack_advanced_params
@@ -178,6 +183,35 @@ def _campaign_analysis_session_key(campaign_pk: int) -> str:
     return f'campaign_{campaign_pk}_filter_analysis'
 
 
+def _related_import_ids_from_context(context: dict) -> list[int]:
+    ids: list[int] = []
+    seen: set[int] = set()
+    for key in ('exact_matches', 'similar_matches'):
+        for match in context.get(key) or []:
+            pk = match.get('import_id')
+            if pk is None:
+                continue
+            try:
+                pk_int = int(pk)
+            except (TypeError, ValueError):
+                continue
+            if pk_int not in seen:
+                seen.add(pk_int)
+                ids.append(pk_int)
+    return ids
+
+
+def _resolve_suggested_reuse_import_id(parsed: dict, context: dict) -> int | None:
+    reuse_id = parsed.get('suggested_reuse_import_id')
+    if reuse_id is not None:
+        try:
+            return int(reuse_id)
+        except (TypeError, ValueError):
+            pass
+    related = _related_import_ids_from_context(context)
+    return related[0] if related else None
+
+
 def _get_campaign_filter_analysis(request, campaign_pk: int) -> dict | None:
     return request.session.get(_campaign_analysis_session_key(campaign_pk))
 
@@ -234,7 +268,8 @@ def _store_campaign_filter_step(
         'reasoning': parsed.get('reasoning') or [],
         'warnings': parsed.get('warnings') or [],
         'confidence': parsed.get('confidence', ''),
-        'suggested_reuse_import_id': parsed.get('suggested_reuse_import_id'),
+        'suggested_reuse_import_id': _resolve_suggested_reuse_import_id(parsed, context),
+        'related_import_ids': _related_import_ids_from_context(context),
         'exact_match_count': context.get('database_stats', {}).get('exact_duplicate_count', 0),
         'similar_match_count': context.get('database_stats', {}).get('similar_import_count', 0),
         'match_type': context.get('match_type', ''),
@@ -334,12 +369,7 @@ def run_filter_analysis(data_import: DataImport) -> FilterAnalysis:
         if rec not in valid_recs:
             rec = FilterAnalysis.Recommendation.REVIEW
 
-        reuse_id = parsed.get('suggested_reuse_import_id')
-        if reuse_id is not None:
-            try:
-                reuse_id = int(reuse_id)
-            except (TypeError, ValueError):
-                reuse_id = None
+        reuse_id = _resolve_suggested_reuse_import_id(parsed, context)
 
         analysis.match_type = context.get('match_type', '')
         analysis.recommendation = rec
@@ -368,6 +398,30 @@ def _load_import_preview(data_import: DataImport) -> tuple[dict | None, str]:
         return preview_upload(data_import.original_file.path), ''
     except Exception as exc:
         return None, str(exc)
+
+
+def _load_cleaned_preview(cleaned_dataset) -> tuple[dict | None, str]:
+    if not cleaned_dataset or not cleaned_dataset.file:
+        return None, ''
+    try:
+        return preview_upload(cleaned_dataset.file.path), ''
+    except Exception as exc:
+        return None, str(exc)
+
+
+def _redirect_import_page(
+    data_import: DataImport,
+    *,
+    section: str = '',
+) -> HttpResponse:
+    """Redirect to import detail or automatic results, optionally scrolled to a section."""
+    if data_import.campaign.is_automatic:
+        url = reverse('pipeline:automatic_results', kwargs={'import_pk': data_import.pk})
+    else:
+        url = reverse('pipeline:import_detail', kwargs={'import_pk': data_import.pk})
+    if section:
+        url = f'{url}#{section}'
+    return redirect(url)
 
 
 def _process_upload_file(data_import: DataImport, uploaded_file=None) -> None:
@@ -414,7 +468,19 @@ def _render_campaign_detail_page(
 
 class CampaignListView(View):
     def get(self, request):
-        campaigns = Campaign.objects.prefetch_related('imports')
+        import_qs = DataImport.objects.select_related(
+            'cleaned_dataset__verification_job',
+            'cleaned_dataset__phone_verification_job',
+        ).order_by('-created_at')
+        campaigns = Campaign.objects.prefetch_related(
+            Prefetch('imports', queryset=import_qs),
+        )
+        for campaign in campaigns:
+            session = request.session.get(_campaign_analysis_session_key(campaign.pk))
+            campaign.pipeline_progress = build_campaign_progress(
+                campaign,
+                session_analysis=session,
+            )
         return render(request, 'pipeline/campaign_list.html', {
             'campaigns': campaigns,
         })
@@ -886,6 +952,9 @@ class AutomaticResultsView(View):
             )
 
         preview, preview_error = _load_import_preview(data_import)
+        cleaned_preview, cleaned_preview_error = _load_cleaned_preview(
+            getattr(data_import, 'cleaned_dataset', None)
+        )
 
         return render(request, 'pipeline/automatic_results.html', {
             'data_import': data_import,
@@ -894,6 +963,8 @@ class AutomaticResultsView(View):
             'verification_job': verification_job,
             'preview': preview,
             'preview_error': preview_error,
+            'cleaned_preview': cleaned_preview,
+            'cleaned_preview_error': cleaned_preview_error,
         })
 
 
@@ -953,7 +1024,7 @@ class SelectColumnsView(View):
         cleaned.file.save(filename, ContentFile(csv_bytes), save=True)
 
         messages.success(request, f'Cleaned export ready ({row_count} rows).')
-        return redirect('pipeline:import_detail', import_pk=data_import.pk)
+        return _redirect_import_page(data_import, section='cleaned-export')
 
 
 class ImportDetailView(View):
@@ -981,6 +1052,9 @@ class ImportDetailView(View):
             )
 
         preview, preview_error = _load_import_preview(data_import)
+        cleaned_preview, cleaned_preview_error = _load_cleaned_preview(
+            getattr(data_import, 'cleaned_dataset', None)
+        )
 
         return render(request, 'pipeline/import_detail.html', {
             'data_import': data_import,
@@ -992,8 +1066,14 @@ class ImportDetailView(View):
             'smartlead_ready': _smartlead_configured(),
             'simpletexting_ready': _simpletexting_configured(),
             'xverify_ready': _xverify_configured(),
+            'simpletexting_source': resolve_simpletexting_source(
+                data_import,
+                xverify_configured=_xverify_configured(),
+            ),
             'preview': preview,
             'preview_error': preview_error,
+            'cleaned_preview': cleaned_preview,
+            'cleaned_preview_error': cleaned_preview_error,
         })
 
 
@@ -1006,17 +1086,17 @@ class MillionVerifierBulkRunView(View):
         cleaned = getattr(data_import, 'cleaned_dataset', None)
         if not cleaned or not cleaned.file:
             messages.error(request, 'Create a cleaned export first.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='millionverifier')
         if not _millionverifier_configured():
             messages.error(request, 'MillionVerifier API key is missing.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='millionverifier')
 
         try:
             df = pd.read_csv(cleaned.file.path, dtype=str, keep_default_na=False).fillna('')
             candidates = [c for c in ['email', 'email_1', 'email_2', 'email_3'] if c in df.columns]
             if not candidates:
                 messages.error(request, 'No email column found in cleaned CSV (expected email/email_1/email_2/email_3).')
-                return redirect('pipeline:import_detail', import_pk=import_pk)
+                return _redirect_import_page(data_import, section='millionverifier')
             emails: list[str] = []
             for _, row in df.iterrows():
                 for col in candidates:
@@ -1033,7 +1113,7 @@ class MillionVerifierBulkRunView(View):
             emails = emails[:limit]
             if not emails:
                 messages.error(request, 'No emails found in cleaned CSV.')
-                return redirect('pipeline:import_detail', import_pk=import_pk)
+                return _redirect_import_page(data_import, section='millionverifier')
 
             buf = io.StringIO()
             buf.write('email\n')
@@ -1077,7 +1157,7 @@ class MillionVerifierBulkRunView(View):
             messages.error(request, f'MillionVerifier failed: {exc}')
         except Exception as exc:
             messages.error(request, f'MillionVerifier failed: {exc}')
-        return redirect('pipeline:import_detail', import_pk=import_pk)
+        return _redirect_import_page(data_import, section='millionverifier')
 
 
 class SmartleadPushGoodEmailsView(View):
@@ -1088,15 +1168,15 @@ class SmartleadPushGoodEmailsView(View):
         )
         if not _smartlead_configured():
             messages.error(request, 'Smartlead API key is missing.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='smartlead')
         job = getattr(getattr(data_import, 'cleaned_dataset', None), 'verification_job', None)
         if not job or job.status != VerificationJob.Status.COMPLETED:
             messages.error(request, 'Run MillionVerifier first (step 3).')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='smartlead')
         good = job.exports.filter(category='good').first()
         if not good or not good.file:
             messages.error(request, 'No "good" export found. Download MV report and confirm categories.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='smartlead')
 
         try:
             df = pd.read_csv(good.file.path, dtype=str, keep_default_na=False).fillna('')
@@ -1109,14 +1189,14 @@ class SmartleadPushGoodEmailsView(View):
                 email_col = df.columns[0] if len(df.columns) else None
             if not email_col:
                 messages.error(request, 'Good export has no columns.')
-                return redirect('pipeline:import_detail', import_pk=import_pk)
+                return _redirect_import_page(data_import, section='smartlead')
 
             emails = [str(x).strip() for x in df[email_col].tolist()]
             emails = [e for e in emails if e]
             emails = list(dict.fromkeys(emails))  # preserve order unique
             if not emails:
                 messages.error(request, 'No emails found in "good" export.')
-                return redirect('pipeline:import_detail', import_pk=import_pk)
+                return _redirect_import_page(data_import, section='smartlead')
 
             camp_resp = create_campaign(settings.SMARTLEAD_API_KEY, data_import.campaign.name)
             campaign_id = camp_resp.get('id') or camp_resp.get('campaign_id') or camp_resp.get('campaignId')
@@ -1133,7 +1213,7 @@ class SmartleadPushGoodEmailsView(View):
             messages.error(request, f'Smartlead failed: {exc}')
         except Exception as exc:
             messages.error(request, f'Smartlead failed: {exc}')
-        return redirect('pipeline:import_detail', import_pk=import_pk)
+        return _redirect_import_page(data_import, section='smartlead')
 
 
 class XVerifyPhonesView(View):
@@ -1145,17 +1225,17 @@ class XVerifyPhonesView(View):
         cleaned = getattr(data_import, 'cleaned_dataset', None)
         if not cleaned or not cleaned.file:
             messages.error(request, 'Create a cleaned export first.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='phone-verifier')
         if not _xverify_configured():
             messages.error(request, 'XVerify is missing config (PHONE_VALIDATION_API_KEY or XVERIFY_DOMAIN).')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='phone-verifier')
 
         try:
             df = pd.read_csv(cleaned.file.path, dtype=str, keep_default_na=False).fillna('')
             phone_cols = [c for c in ['phone', 'phone_1', 'phone_2', 'phone_3'] if c in df.columns]
             if not phone_cols:
                 messages.error(request, 'No phone column found in cleaned CSV (expected phone/phone_1/phone_2/phone_3).')
-                return redirect('pipeline:import_detail', import_pk=import_pk)
+                return _redirect_import_page(data_import, section='phone-verifier')
 
             phones: list[str] = []
             for _, row in df.iterrows():
@@ -1172,7 +1252,7 @@ class XVerifyPhonesView(View):
                 phones = phones[:5]
             if not phones:
                 messages.error(request, 'No phone numbers found in cleaned CSV.')
-                return redirect('pipeline:import_detail', import_pk=import_pk)
+                return _redirect_import_page(data_import, section='phone-verifier')
 
             job, _ = PhoneVerificationJob.objects.get_or_create(cleaned_dataset=cleaned)
             job.status = PhoneVerificationJob.Status.PROCESSING
@@ -1224,7 +1304,7 @@ class XVerifyPhonesView(View):
                 job.error_message = str(exc)
                 job.save()
             messages.error(request, f'XVerify failed: {exc}')
-        return redirect('pipeline:import_detail', import_pk=import_pk)
+        return _redirect_import_page(data_import, section='phone-verifier')
 
 
 class DownloadXVerifyResultsView(View):
@@ -1250,26 +1330,44 @@ class DownloadXVerifyResultsView(View):
 class SimpleTextingPushPhonesView(View):
     def post(self, request, import_pk):
         data_import = get_object_or_404(
-            DataImport.objects.select_related('campaign', 'cleaned_dataset__phone_verification_job'),
+            DataImport.objects.select_related(
+                'campaign',
+                'cleaned_dataset__phone_verification_job',
+                'cleaned_dataset__verification_job',
+            ).prefetch_related('cleaned_dataset__verification_job__exports'),
             pk=import_pk,
         )
         if not _simpletexting_configured():
             messages.error(request, 'SimpleTexting API key is missing.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='simpletexting')
 
-        job = getattr(
-            getattr(data_import, 'cleaned_dataset', None),
-            'phone_verification_job',
-            None,
-        )
-        if not job or job.status != PhoneVerificationJob.Status.COMPLETED or not job.results_file:
-            messages.error(request, 'No verified phone numbers found. Run XVerify first (step 4).')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
-        with job.results_file.open('rb') as f:
-            good_numbers = good_phones_from_csv_bytes(f.read())
-        if not good_numbers:
-            messages.error(request, 'XVerify ran but no valid phone numbers were found.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+        xverify_on = _xverify_configured()
+        source = resolve_simpletexting_source(data_import, xverify_configured=xverify_on)
+        if not source:
+            if xverify_on:
+                messages.error(
+                    request,
+                    'No verified phone numbers found. Run XVerify first (step 4), '
+                    'or complete MillionVerifier (step 3).',
+                )
+            else:
+                messages.error(
+                    request,
+                    'Run MillionVerifier first (step 3), then push good emails here for testing.',
+                )
+            return _redirect_import_page(data_import, section='simpletexting')
+
+        contacts = collect_simpletexting_contacts(data_import, source=source)
+        if not contacts:
+            if source == 'mv_good':
+                messages.error(
+                    request,
+                    'No contacts with both a good email and a phone number were found. '
+                    'Ensure your cleaned export has phone columns, or run XVerify when available.',
+                )
+            else:
+                messages.error(request, 'XVerify ran but no valid phone numbers were found.')
+            return _redirect_import_page(data_import, section='simpletexting')
 
         try:
             list_id, created_new = get_or_create_list(
@@ -1277,40 +1375,43 @@ class SimpleTextingPushPhonesView(View):
                 data_import.campaign.name[:41],
             )
             ok = 0
-            for n in good_numbers[:400]:
+            for contact in contacts[:400]:
                 create_contact_on_lists(
                     settings.SIMPLETEXTING_API_KEY,
-                    n,
+                    contact['phone'],
                     [list_id],
+                    email=contact.get('email', ''),
                 )
                 ok += 1
-            if created_new:
-                messages.success(
-                    request,
-                    f'SimpleTexting: created list "{data_import.campaign.name[:41]}" '
-                    f'and added {ok} contact(s).',
-                )
-            else:
-                messages.success(
-                    request,
-                    f'SimpleTexting: reused existing list "{data_import.campaign.name[:41]}" '
-                    f'and added {ok} contact(s).',
-                )
+            source_label = (
+                'MillionVerifier good emails (testing)'
+                if source == 'mv_good'
+                else 'XVerify good phones'
+            )
+            action = 'created list' if created_new else 'reused list'
+            messages.success(
+                request,
+                f'SimpleTexting: {action} "{data_import.campaign.name[:41]}" '
+                f'and added {ok} contact(s) from {source_label}.',
+            )
         except SimpleTextingError as exc:
             messages.error(request, f'SimpleTexting failed: {exc}')
         except Exception as exc:
             messages.error(request, f'SimpleTexting failed: {exc}')
-        return redirect('pipeline:import_detail', import_pk=import_pk)
+        return _redirect_import_page(data_import, section='simpletexting')
 
 
 class DownloadDianaQueueView(View):
     """CSV of rows missing email or phone (full Outscraper row + diana_reason)."""
 
     def get(self, request, import_pk):
-        data_import = get_object_or_404(DataImport, pk=import_pk)
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('campaign'),
+            pk=import_pk,
+        )
         if data_import.status != DataImport.Status.PARSED:
             messages.error(request, 'Import must be parsed before exporting Diana queue.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='diana')
         if not data_import.original_file:
             raise Http404('No original file.')
 
@@ -1320,7 +1421,7 @@ class DownloadDianaQueueView(View):
             )
         except Exception as exc:
             messages.error(request, f'Diana export failed: {exc}')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='diana')
 
         fname = f'diana_handoff_campaign{data_import.campaign_id}_{data_import.pk}.csv'
         return HttpResponse(
@@ -1365,18 +1466,18 @@ class DownloadCleanedView(View):
 class VerificationUploadView(View):
     def post(self, request, import_pk):
         data_import = get_object_or_404(
-            DataImport.objects.select_related('cleaned_dataset'),
+            DataImport.objects.select_related('campaign', 'cleaned_dataset'),
             pk=import_pk,
         )
         cleaned = getattr(data_import, 'cleaned_dataset', None)
         if not cleaned:
             messages.error(request, 'Create a cleaned export first.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='millionverifier')
 
         form = VerificationUploadForm(request.POST, request.FILES)
         if not form.is_valid():
             messages.error(request, 'Invalid verification file.')
-            return redirect('pipeline:import_detail', import_pk=import_pk)
+            return _redirect_import_page(data_import, section='millionverifier')
 
         job, _ = VerificationJob.objects.get_or_create(cleaned_dataset=cleaned)
         job.source_file = form.cleaned_data['source_file']
@@ -1418,7 +1519,7 @@ class VerificationUploadView(View):
             job.save()
             messages.error(request, f'Verification split failed: {exc}')
 
-        return redirect('pipeline:import_detail', import_pk=import_pk)
+        return _redirect_import_page(data_import, section='millionverifier')
 
 
 class DownloadVerificationExportView(View):

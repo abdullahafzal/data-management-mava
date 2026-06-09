@@ -88,7 +88,7 @@
   </section>
 
   {# 2. Cleaned export #}
-  <section class="card-app pipeline-section mb-3">
+  <section id="cleaned-export" class="card-app pipeline-section mb-3">
     <div class="card-app-header">
       <h2><span class="pipeline-step-num">2</span> Cleaned export</h2>
     </div>
@@ -105,6 +105,7 @@
       <a href="{% url 'pipeline:select_columns' import_pk=data_import.pk %}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-sliders me-1"></i> Re-select columns
       </a>
+      {% include "pipeline/includes/outscraper_preview.html" with preview=cleaned_preview preview_error=cleaned_preview_error preview_title="Cleaned data preview" %}
       {% elif data_import.status == 'parsed' %}
       <p class="text-muted small mb-3">Choose which columns to keep before verification.</p>
       <a href="{% url 'pipeline:select_columns' import_pk=data_import.pk %}" class="btn btn-app-primary">
@@ -117,7 +118,7 @@
   </section>
 
   {# 3. MillionVerifier #}
-  <section class="card-app pipeline-section mb-3">
+  <section id="millionverifier" class="card-app pipeline-section mb-3">
     <div class="card-app-header">
       <h2><span class="pipeline-step-num">3</span> MillionVerifier</h2>
     </div>
@@ -166,7 +167,7 @@
   </section>
 
   {# 3b. Smartlead #}
-  <section class="card-app pipeline-section mb-3">
+  <section id="smartlead" class="card-app pipeline-section mb-3">
     <div class="card-app-header">
       <h2><span class="pipeline-step-num">3b</span> Smartlead</h2>
     </div>
@@ -195,7 +196,7 @@
   </section>
 
   {# 4. Phone verifier #}
-  <section class="card-app pipeline-section mb-3">
+  <section id="phone-verifier" class="card-app pipeline-section mb-3">
     <div class="card-app-header">
       <h2><span class="pipeline-step-num">4</span> Phone verifier</h2>
     </div>
@@ -230,12 +231,11 @@
           </button>
         </form>
         {% else %}
-        <button type="button" class="btn btn-outline-primary"
-                data-api-modal
-                data-api-title="XVerify"
-                data-api-message="XVerify is missing (PHONE_VALIDATION_API_KEY or XVERIFY_DOMAIN).">
-          <i class="bi bi-telephone me-1"></i> Verify phones (XVerify)
-        </button>
+        <div class="alert alert-warning alert-app py-2 small mb-3">
+          <i class="bi bi-info-circle me-1"></i>
+          XVerify is not configured — skip this step and use <strong>SimpleTexting</strong> below with
+          MillionVerifier <strong>good</strong> emails for testing.
+        </div>
         {% endif %}
       {% else %}
       <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
@@ -244,26 +244,51 @@
   </section>
 
   {# 4b. SimpleTexting #}
-  <section class="card-app pipeline-section mb-3">
+  <section id="simpletexting" class="card-app pipeline-section mb-3">
     <div class="card-app-header">
       <h2><span class="pipeline-step-num">4b</span> SimpleTexting</h2>
     </div>
     <div class="card-body">
+      {% if simpletexting_source == 'mv_good' %}
+      <p class="text-muted small mb-3">
+        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle me-1">Testing mode</span>
+        XVerify is off — push MillionVerifier <strong>good</strong> emails (matched to phones from your cleaned export) into a SimpleTexting list.
+      </p>
+      {% elif simpletexting_source == 'xverify' %}
       <p class="text-muted small mb-3">Create a list (same campaign name) and upload the <strong>good</strong> numbers from XVerify.</p>
+      {% else %}
+      <p class="text-muted small mb-3">
+        {% if xverify_ready %}
+        Run XVerify first, then push good phones here. If XVerify is unavailable, complete MillionVerifier and use good emails for testing.
+        {% else %}
+        Complete MillionVerifier (step 3), then push good emails here for testing.
+        {% endif %}
+      </p>
+      {% endif %}
       {% if data_import.cleaned_dataset %}
-        {% if simpletexting_ready %}
+        {% if simpletexting_ready and simpletexting_source %}
         <form method="post" action="{% url 'pipeline:simpletexting_push_phones' import_pk=data_import.pk %}" class="d-inline">
           {% csrf_token %}
           <button type="submit" class="btn btn-outline-primary">
-            <i class="bi bi-cloud-arrow-up me-1"></i> Push good phones to SimpleTexting
+            <i class="bi bi-cloud-arrow-up me-1"></i>
+            {% if simpletexting_source == 'mv_good' %}
+            Push good emails to SimpleTexting (testing)
+            {% else %}
+            Push good phones to SimpleTexting
+            {% endif %}
           </button>
         </form>
+        {% elif simpletexting_ready %}
+        <button type="button" class="btn btn-outline-primary" disabled>
+          <i class="bi bi-cloud-arrow-up me-1"></i> Push to SimpleTexting
+        </button>
+        <p class="small text-muted mt-2 mb-0">Waiting on MillionVerifier or XVerify results.</p>
         {% else %}
         <button type="button" class="btn btn-outline-primary"
                 data-api-modal
                 data-api-title="SimpleTexting"
                 data-api-message="SimpleTexting API is missing.">
-          <i class="bi bi-cloud-arrow-up me-1"></i> Push good phones to SimpleTexting
+          <i class="bi bi-cloud-arrow-up me-1"></i> Push to SimpleTexting
         </button>
         {% endif %}
       {% else %}
@@ -273,7 +298,7 @@
   </section>
 
   {# 5. Diana handoff #}
-  <section class="card-app pipeline-section mb-3">
+  <section id="diana" class="card-app pipeline-section mb-3">
     <div class="card-app-header">
       <h2><span class="pipeline-step-num">5</span> Diana handoff</h2>
     </div>

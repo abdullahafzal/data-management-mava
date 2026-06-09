@@ -254,6 +254,42 @@ class FilterAnalysis(models.Model):
     def __str__(self):
         return f'Filter analysis — import {self.data_import_id}'
 
+    @property
+    def related_import_ids(self) -> list[int]:
+        ctx = self.context_snapshot or {}
+        ids: list[int] = []
+        seen: set[int] = set()
+        for key in ('exact_matches', 'similar_matches'):
+            for match in ctx.get(key) or []:
+                pk = match.get('import_id')
+                if pk is None:
+                    continue
+                try:
+                    pk_int = int(pk)
+                except (TypeError, ValueError):
+                    continue
+                if pk_int not in seen:
+                    seen.add(pk_int)
+                    ids.append(pk_int)
+        return ids
+
+    @property
+    def best_import_link_id(self) -> int | None:
+        if self.suggested_reuse_import_id:
+            return self.suggested_reuse_import_id
+        related = self.related_import_ids
+        return related[0] if related else None
+
+    @property
+    def exact_match_count(self) -> int:
+        stats = (self.context_snapshot or {}).get('database_stats') or {}
+        return int(stats.get('exact_duplicate_count') or 0)
+
+    @property
+    def similar_match_count(self) -> int:
+        stats = (self.context_snapshot or {}).get('database_stats') or {}
+        return int(stats.get('similar_import_count') or 0)
+
 
 class VerificationExport(models.Model):
     """One file per MillionVerifier result category (good, risky, unknown, etc.)."""

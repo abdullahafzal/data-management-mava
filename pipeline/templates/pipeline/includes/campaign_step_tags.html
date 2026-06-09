@@ -1,0 +1,28 @@
+{% with progress=campaign.pipeline_progress %}
+<div class="campaign-step-tags" aria-label="Campaign progress">
+  {% if progress.is_complete %}
+  <span class="campaign-step-tag is-complete">
+    <i class="bi bi-check-circle-fill me-1"></i>Complete
+  </span>
+  {% for step in progress.steps %}
+  <span class="campaign-step-tag is-done" title="{{ step.label }}">
+    <i class="bi bi-check2"></i> {{ step.label }}
+  </span>
+  {% endfor %}
+  {% else %}
+  {% for step in progress.steps %}
+  <span class="campaign-step-tag {% if step.state == 'current' %}is-current{% elif step.state == 'done' %}is-done{% else %}is-pending{% endif %}"
+        title="{{ step.label }}">
+    {% if step.state == 'done' %}<i class="bi bi-check2 me-1"></i>{% elif step.state == 'current' %}<i class="bi bi-arrow-right-short me-1"></i>{% endif %}
+    {{ step.label }}
+  </span>
+  {% endfor %}
+  {% if progress.is_failed %}
+  <span class="campaign-step-tag is-failed"><i class="bi bi-exclamation-circle me-1"></i>Failed</span>
+  {% endif %}
+  {% endif %}
+</div>
+{% if progress.status_note and not progress.is_complete %}
+<p class="campaign-step-note mb-0">{{ progress.status_note }}</p>
+{% endif %}
+{% endwith %}

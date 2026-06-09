@@ -15,7 +15,7 @@
         {% else %}Needs review{% endif %}
       </span>
       {% if analysis.confidence %}
-      <span class="badge bg-light text-muted border ms-1">{{ analysis.confidence }} confidence</span>
+      <span class="badge bg-light text-muted border ms-1 text-capitalize">{{ analysis.confidence }} confidence</span>
       {% endif %}
     </div>
     {% if analysis.analyzed_at %}
@@ -47,14 +47,6 @@
   </div>
   {% endif %}
 
-  {% if analysis.exact_match_count %}
-  <p class="small text-muted mb-2">{{ analysis.exact_match_count }} exact match(es) in database · {{ analysis.similar_match_count }} similar</p>
-  {% endif %}
-
-  {% if analysis.suggested_reuse_import_id %}
-  <a href="{% url 'pipeline:import_detail' import_pk=analysis.suggested_reuse_import_id %}" class="btn btn-sm btn-outline-primary">
-    <i class="bi bi-box-arrow-in-right me-1"></i> Open suggested import #{{ analysis.suggested_reuse_import_id }}
-  </a>
-  {% endif %}
+  {% include "pipeline/includes/filter_analysis_import_links.html" with primary_import_id=analysis.suggested_reuse_import_id exact_match_count=analysis.exact_match_count similar_match_count=analysis.similar_match_count related_import_ids=analysis.related_import_ids %}
 </div>
 {% endif %}

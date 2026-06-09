@@ -15,7 +15,7 @@
 {% if campaigns %}
 <div class="campaign-grid">
   {% for campaign in campaigns %}
-  <a href="{% url 'pipeline:campaign_detail' pk=campaign.pk %}" class="campaign-card">
+  <a href="{{ campaign.pipeline_progress.open_url }}" class="campaign-card">
     <div class="d-flex justify-content-between align-items-start gap-2">
       <h2 class="campaign-card-title">{{ campaign.name }}</h2>
       {% if campaign.is_automatic %}
@@ -30,6 +30,7 @@
       {{ campaign.niche }}{% if campaign.niche and campaign.location %} · {% endif %}{{ campaign.location|location_display }}
     </p>
     {% endif %}
+    {% include "pipeline/includes/campaign_step_tags.html" %}
     <div class="campaign-card-footer">
       <span><i class="bi bi-file-earmark-spreadsheet me-1"></i>{{ campaign.imports.count }} import{{ campaign.imports.count|pluralize }}</span>
       <span class="text-primary">Open <i class="bi bi-arrow-right"></i></span>

@@ -14,6 +14,11 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <div id="page-loader" class="page-loader" role="status" aria-live="polite" aria-busy="true">
+    <div class="page-loader-spinner" aria-hidden="true"></div>
+    <span class="page-loader-label">Loading…</span>
+  </div>
+
   <nav class="app-nav">
     <div class="container d-flex align-items-center justify-content-between">
       <a class="app-brand" href="{% url 'pipeline:campaign_list' %}">
@@ -43,6 +48,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'pipeline/js/page-loader.js' %}"></script>
   <script>
     document.querySelectorAll('.nav-app-link').forEach(link => {
       const path = link.getAttribute('data-path');
