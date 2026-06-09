@@ -56,14 +56,13 @@ from .services import (
     build_cleaned_csv,
     build_diana_handoff_csv,
     build_filter_fingerprint,
-    pack_advanced_params,
     find_matching_imports,
     parse_extra_tags,
     parse_upload,
     preview_upload,
     split_verification_results,
 )
-
+from .services.advanced_params import pack_advanced_params
 SUGGESTED_COLUMNS = [
     'name',
     'name_for_emails',
