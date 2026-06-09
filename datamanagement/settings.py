@@ -13,17 +13,21 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# External APIs (set in environment; see PROJECT_PLAN.md)
+load_dotenv(BASE_DIR / '.env')
+
+# External APIs — set in `.env` (see `.env.example`)
 OUTSCRAPER_API_KEY = os.environ.get('OUTSCRAPER_API_KEY', '')
-MILLIONVERIFIER_API_KEY = os.environ.get('MILLIONVERIFIER_API_KEY', '9i4IvMUPdO734qa1grFy4mHMk')
-SMARTLEAD_API_KEY = os.environ.get('SMARTLEAD_API_KEY', '3ffabf9a-654d-4991-8b9f-ed6ad3064f5d_1v018ee')
-PHONE_VALIDATION_API_KEY = os.environ.get('PHONE_VALIDATION_API_KEY', '1020178-CB0F68E0')
-SIMPLETEXTING_API_KEY = os.environ.get('SIMPLETEXTING_API_KEY', '1e064ea54037ed1ca448c9d57d712a38')
-XVERIFY_DOMAIN = os.environ.get('XVERIFY_DOMAIN', 'https://0e3c-103-79-19-235.ngrok-free.app')
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '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')
+MILLIONVERIFIER_API_KEY = os.environ.get('MILLIONVERIFIER_API_KEY', '')
+SMARTLEAD_API_KEY = os.environ.get('SMARTLEAD_API_KEY', '')
+PHONE_VALIDATION_API_KEY = os.environ.get('PHONE_VALIDATION_API_KEY', '')
+SIMPLETEXTING_API_KEY = os.environ.get('SIMPLETEXTING_API_KEY', '')
+XVERIFY_DOMAIN = os.environ.get('XVERIFY_DOMAIN', '')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
 
 # Testing / safety switches.
