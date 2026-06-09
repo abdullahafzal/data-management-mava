@@ -249,13 +249,38 @@
       <h2><span class="pipeline-step-num">4b</span> SimpleTexting</h2>
     </div>
     <div class="card-body">
+      <div class="alert alert-info alert-app py-2 small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        This step creates a <strong>contact list</strong> in SimpleTexting
+        (<strong>Contacts → Lists</strong>). It does <strong>not</strong> create an SMS entry under
+        <strong>Campaigns → Sent</strong> — compose and send the campaign from the SimpleTexting dashboard.
+      </div>
+
+      {% if simpletexting_list %}
+      <div class="alert alert-success alert-app py-2 small mb-3">
+        <i class="bi bi-people-fill me-1"></i>
+        Contact list <strong>{{ simpletexting_list.name }}</strong> exists in SimpleTexting
+        {% if simpletexting_list.total_contacts is not None %}
+        · {{ simpletexting_list.total_contacts }} contact{{ simpletexting_list.total_contacts|pluralize }}
+        {% endif %}
+        {% if simpletexting_list.active_contacts is not None %}
+        · {{ simpletexting_list.active_contacts }} active
+        {% endif %}
+        <div class="mt-1 text-muted">
+          Find it: SimpleTexting → <strong>Contacts → Lists</strong> → search
+          <code class="user-select-all">{{ simpletexting_list.name }}</code>
+          (you have many lists — it won’t appear on page 1).
+        </div>
+      </div>
+      {% endif %}
+
       {% if simpletexting_source == 'mv_good' %}
       <p class="text-muted small mb-3">
         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle me-1">Testing mode</span>
-        XVerify is off — push MillionVerifier <strong>good</strong> emails (matched to phones from your cleaned export) into a SimpleTexting list.
+        XVerify is off — push MillionVerifier <strong>good</strong> emails (matched to phones from your cleaned export) into the contact list above.
       </p>
       {% elif simpletexting_source == 'xverify' %}
-      <p class="text-muted small mb-3">Create a list (same campaign name) and upload the <strong>good</strong> numbers from XVerify.</p>
+      <p class="text-muted small mb-3">Add <strong>good</strong> phone numbers from XVerify to the contact list (same name as this campaign).</p>
       {% else %}
       <p class="text-muted small mb-3">
         {% if xverify_ready %}
@@ -272,9 +297,9 @@
           <button type="submit" class="btn btn-outline-primary">
             <i class="bi bi-cloud-arrow-up me-1"></i>
             {% if simpletexting_source == 'mv_good' %}
-            Push good emails to SimpleTexting (testing)
+            Add contacts to SimpleTexting list (testing)
             {% else %}
-            Push good phones to SimpleTexting
+            Add contacts to SimpleTexting list
             {% endif %}
           </button>
         </form>

@@ -4,7 +4,6 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 db.sqlite3
-.env
 *.egg-info/
 .eggs/
 dist/
@@ -13,3 +12,5 @@ build/
 .DS_Store
 .idea/
 .vscode/
+config.bat
+node_modules

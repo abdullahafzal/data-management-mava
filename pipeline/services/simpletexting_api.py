@@ -103,6 +103,29 @@ def create_list(api_key: str, name: str) -> str:
     return list_id
 
 
+def get_list_details(api_key: str, list_id_or_name: str) -> dict[str, Any] | None:
+    """Fetch list metadata (name, contact counts) or None if not found."""
+    encoded = quote(list_id_or_name.strip(), safe="")
+    url = f"{BASE_URL}/contact-lists/{encoded}"
+    try:
+        r = requests.get(url, headers=_headers(api_key), timeout=60)
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        return r.json()
+    except requests.RequestException as exc:
+        raise SimpleTextingError(str(exc)) from exc
+    except ValueError as exc:
+        raise SimpleTextingError(f"Invalid JSON response from SimpleTexting: {exc}") from exc
+
+
+def find_list_details_by_name(api_key: str, name: str) -> dict[str, Any] | None:
+    list_id = find_list_by_name(api_key, name)
+    if not list_id:
+        return None
+    return get_list_details(api_key, list_id)
+
+
 def get_or_create_list(api_key: str, name: str) -> tuple[str, bool]:
     """
     Return (list_id, created_new).
