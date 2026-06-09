@@ -47,7 +47,13 @@ from .services.millionverifier_bulk import (
     wait_until_done,
 )
 from .services.smartlead_api import SmartleadError, add_leads, create_campaign
-from .services.simpletexting_api import SimpleTextingError, create_contact_on_lists, get_or_create_list
+from .services.simpletexting_api import (
+    SimpleTextingError,
+    create_contact_on_lists,
+    find_list_details_by_name,
+    get_list_details,
+    get_or_create_list,
+)
 from .services.simpletexting_contacts import (
     collect_simpletexting_contacts,
     resolve_simpletexting_source,
@@ -173,6 +179,29 @@ def _smartlead_configured() -> bool:
 
 def _simpletexting_configured() -> bool:
     return bool(getattr(settings, 'SIMPLETEXTING_API_KEY', ''))
+
+
+def _simpletexting_list_status(campaign_name: str) -> dict | None:
+    """Contact list in SimpleTexting (Contacts → Lists), not an SMS Campaign."""
+    if not _simpletexting_configured():
+        return None
+    list_name = (campaign_name or '').strip()[:41]
+    if not list_name:
+        return None
+    try:
+        data = find_list_details_by_name(settings.SIMPLETEXTING_API_KEY, list_name)
+        if not data:
+            return None
+        return {
+            'list_id': data.get('listId') or data.get('id'),
+            'name': data.get('name') or list_name,
+            'total_contacts': data.get('totalContactsCount'),
+            'active_contacts': data.get('activeContactsCount'),
+            'created': data.get('created') or '',
+            'updated': data.get('updated') or '',
+        }
+    except SimpleTextingError:
+        return None
 
 
 def _xverify_configured() -> bool:
@@ -1070,6 +1099,7 @@ class ImportDetailView(View):
                 data_import,
                 xverify_configured=_xverify_configured(),
             ),
+            'simpletexting_list': _simpletexting_list_status(data_import.campaign.name),
             'preview': preview,
             'preview_error': preview_error,
             'cleaned_preview': cleaned_preview,
@@ -1388,11 +1418,21 @@ class SimpleTextingPushPhonesView(View):
                 if source == 'mv_good'
                 else 'XVerify good phones'
             )
-            action = 'created list' if created_new else 'reused list'
+            action = 'Created contact list' if created_new else 'Updated contact list'
+            list_info = ''
+            try:
+                details = get_list_details(settings.SIMPLETEXTING_API_KEY, list_id)
+                total = details.get('totalContactsCount')
+                if total is not None:
+                    list_info = f' List now has {total} contact(s) in SimpleTexting.'
+            except SimpleTextingError:
+                pass
             messages.success(
                 request,
-                f'SimpleTexting: {action} "{data_import.campaign.name[:41]}" '
-                f'and added {ok} contact(s) from {source_label}.',
+                f'{action} "{data_import.campaign.name[:41]}" — added {ok} contact(s) '
+                f'from {source_label}.{list_info} '
+                f'Find it in SimpleTexting under Contacts → Lists (not Campaigns). '
+                f'To send SMS, create a Campaign in SimpleTexting and select this list.',
             )
         except SimpleTextingError as exc:
             messages.error(request, f'SimpleTexting failed: {exc}')
