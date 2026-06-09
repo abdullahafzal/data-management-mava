@@ -66,7 +66,12 @@ def _friendly_openai_error(response: requests.Response) -> str:
             '"Analyze filters with AI" again. Avoid double-clicking the button.'
         )
     if response.status_code == 401:
-        return 'OpenAI rejected the API key (401). Check OPENAI_API_KEY is valid and active.'
+        detail = message or 'invalid or revoked'
+        return (
+            f'OpenAI rejected the API key (401): {detail}. '
+            'Create a new key at https://platform.openai.com/api-keys, '
+            'update OPENAI_API_KEY in `.env`, and restart the dev server.'
+        )
     if response.status_code == 403:
         return 'OpenAI access denied (403). Your key may lack chat/completions permission.'
     if message:
