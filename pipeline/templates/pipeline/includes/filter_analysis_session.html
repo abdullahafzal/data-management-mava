@@ -1,0 +1,60 @@
+{# Display pre-upload AI analysis from session (dict, not model) #}
+{% if analysis.status == 'failed' %}
+<div class="alert alert-warning alert-app mb-0">
+  <i class="bi bi-exclamation-triangle me-1"></i>
+  <strong>AI unavailable.</strong>
+  {% if analysis.error_message %}{{ analysis.error_message }}{% else %}Analysis did not complete.{% endif %}
+</div>
+{% else %}
+<div class="filter-analysis-box mb-0">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+    <div>
+      <span class="badge {% if analysis.recommendation == 'reuse_existing' %}bg-success{% elif analysis.recommendation == 'scrape_again' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+        {% if analysis.recommendation == 'reuse_existing' %}Reuse existing data
+        {% elif analysis.recommendation == 'scrape_again' %}Scrape again
+        {% else %}Needs review{% endif %}
+      </span>
+      {% if analysis.confidence %}
+      <span class="badge bg-light text-muted border ms-1">{{ analysis.confidence }} confidence</span>
+      {% endif %}
+    </div>
+    {% if analysis.analyzed_at %}
+    <span class="small text-muted">{{ analysis.analyzed_at }}</span>
+    {% endif %}
+  </div>
+
+  {% if analysis.headline %}
+  <h3 class="h6 fw-semibold mb-2">{{ analysis.headline }}</h3>
+  {% endif %}
+
+  {% if analysis.summary %}
+  <p class="small mb-2">{{ analysis.summary }}</p>
+  {% endif %}
+
+  {% if analysis.reasoning %}
+  <ul class="small mb-2 ps-3">
+    {% for point in analysis.reasoning %}
+    <li>{{ point }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if analysis.warnings %}
+  <div class="alert alert-warning alert-app py-2 small mb-2">
+    {% for w in analysis.warnings %}
+    <div>{{ w }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if analysis.exact_match_count %}
+  <p class="small text-muted mb-2">{{ analysis.exact_match_count }} exact match(es) in database · {{ analysis.similar_match_count }} similar</p>
+  {% endif %}
+
+  {% if analysis.suggested_reuse_import_id %}
+  <a href="{% url 'pipeline:import_detail' import_pk=analysis.suggested_reuse_import_id %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-box-arrow-in-right me-1"></i> Open suggested import #{{ analysis.suggested_reuse_import_id }}
+  </a>
+  {% endif %}
+</div>
+{% endif %}

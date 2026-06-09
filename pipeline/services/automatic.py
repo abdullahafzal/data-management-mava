@@ -1,5 +1,6 @@
 """Automatic campaign pipeline: parse → clean with fixed columns."""
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 
 from ..constants import resolve_automatic_columns
@@ -29,6 +30,7 @@ def run_automatic_pipeline(data_import: DataImport) -> tuple[int, list[str], lis
     csv_bytes, row_count = build_cleaned_csv(
         data_import.original_file.path,
         selected,
+        row_limit=getattr(settings, 'MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 0),
     )
 
     data_import.selected_columns = selected

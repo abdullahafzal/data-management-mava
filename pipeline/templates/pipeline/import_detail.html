@@ -143,12 +143,51 @@
       {% endif %}
 
       {% if data_import.cleaned_dataset %}
-      <button type="button" class="btn btn-app-primary"
-              data-api-modal
-              data-api-title="MillionVerifier"
-              data-api-message="MillionVerifier API is missing.">
-        <i class="bi bi-shield-check me-1"></i> Verify from MillionVerifier
-      </button>
+        {% if millionverifier_ready %}
+        <form method="post" action="{% url 'pipeline:verification_run_api' import_pk=data_import.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-app-primary">
+            <i class="bi bi-shield-check me-1"></i> Verify from MillionVerifier (API)
+          </button>
+        </form>
+        <p class="small text-muted mt-2 mb-0">Test mode: uses the first 5 rows when your row-limit is enabled.</p>
+        {% else %}
+        <button type="button" class="btn btn-app-primary"
+                data-api-modal
+                data-api-title="MillionVerifier"
+                data-api-message="MillionVerifier API is missing.">
+          <i class="bi bi-shield-check me-1"></i> Verify from MillionVerifier
+        </button>
+        {% endif %}
+      {% else %}
+      <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 3b. Smartlead #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">3b</span> Smartlead</h2>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">Create a Smartlead campaign (same name) and upload the <strong>good</strong> emails from MillionVerifier.</p>
+      {% if data_import.cleaned_dataset %}
+        {% if smartlead_ready %}
+        <form method="post" action="{% url 'pipeline:smartlead_push_good' import_pk=data_import.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Push good emails to Smartlead
+          </button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-outline-primary"
+                data-api-modal
+                data-api-title="Smartlead"
+                data-api-message="Smartlead API is missing.">
+          <i class="bi bi-cloud-arrow-up me-1"></i> Push good emails to Smartlead
+        </button>
+        {% endif %}
       {% else %}
       <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
       {% endif %}
@@ -162,13 +201,71 @@
     </div>
     <div class="card-body">
       <p class="text-muted small mb-3">Validate phone numbers before SMS or calling campaigns.</p>
+
+      {% if phone_verification_job and phone_verification_job.status == 'completed' %}
+      <div class="alert alert-success alert-app d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-check-circle-fill"></i>
+        <span class="small">
+          XVerify complete · {{ phone_verification_job.valid_count }}/{{ phone_verification_job.total_count }} valid
+          · {{ phone_verification_job.completed_at|date:"M j, Y" }}
+        </span>
+      </div>
+      <a href="{% url 'pipeline:download_xverify' import_pk=data_import.pk %}" class="btn-download mb-3">
+        <span class="btn-download-icon green"><i class="bi bi-filetype-csv"></i></span>
+        <span>
+          <div class="btn-download-title">Download XVerify results CSV</div>
+          <p class="btn-download-desc">All checked numbers with status, reason, and valid/invalid flag</p>
+        </span>
+      </a>
+      {% elif phone_verification_job and phone_verification_job.status == 'failed' %}
+      <div class="alert alert-danger alert-app mb-3">{{ phone_verification_job.error_message }}</div>
+      {% endif %}
+
       {% if data_import.cleaned_dataset %}
-      <button type="button" class="btn btn-outline-primary"
-              data-api-modal
-              data-api-title="Phone verifier"
-              data-api-message="API is missing.">
-        <i class="bi bi-telephone me-1"></i> Verify the phone number
-      </button>
+        {% if xverify_ready %}
+        <form method="post" action="{% url 'pipeline:xverify_verify_phones' import_pk=data_import.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-telephone me-1"></i> Verify phones (XVerify)
+          </button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-outline-primary"
+                data-api-modal
+                data-api-title="XVerify"
+                data-api-message="XVerify is missing (PHONE_VALIDATION_API_KEY or XVERIFY_DOMAIN).">
+          <i class="bi bi-telephone me-1"></i> Verify phones (XVerify)
+        </button>
+        {% endif %}
+      {% else %}
+      <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 4b. SimpleTexting #}
+  <section class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">4b</span> SimpleTexting</h2>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">Create a list (same campaign name) and upload the <strong>good</strong> numbers from XVerify.</p>
+      {% if data_import.cleaned_dataset %}
+        {% if simpletexting_ready %}
+        <form method="post" action="{% url 'pipeline:simpletexting_push_phones' import_pk=data_import.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Push good phones to SimpleTexting
+          </button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-outline-primary"
+                data-api-modal
+                data-api-title="SimpleTexting"
+                data-api-message="SimpleTexting API is missing.">
+          <i class="bi bi-cloud-arrow-up me-1"></i> Push good phones to SimpleTexting
+        </button>
+        {% endif %}
       {% else %}
       <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
       {% endif %}

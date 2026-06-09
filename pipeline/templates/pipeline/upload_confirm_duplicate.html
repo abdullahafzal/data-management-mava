@@ -78,6 +78,17 @@
   </div>
 </div>
 
+{% if filter_analysis %}
+<div class="card-app mb-4">
+  <div class="card-app-header">
+    <h2><i class="bi bi-stars me-2 text-primary"></i>AI recommendation (from Step 1)</h2>
+  </div>
+  <div class="card-body">
+    {% include "pipeline/includes/filter_analysis_session.html" with analysis=filter_analysis %}
+  </div>
+</div>
+{% endif %}
+
 <div class="d-flex flex-wrap gap-2">
   <form method="post" action="{% url 'pipeline:upload_confirm' import_pk=data_import.pk %}">
     {% csrf_token %}

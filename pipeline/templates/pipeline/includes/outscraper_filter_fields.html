@@ -1,0 +1,116 @@
+{# Outscraper filters only (no file upload) #}
+<p class="text-muted small mb-3">
+  Enter the exact settings you used in Outscraper. Run <strong>AI analysis</strong> first to check
+  if you already have this data in the database — then upload your export file.
+</p>
+
+<div class="outscraper-filters-panel mb-0">
+  <p class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:0.04em">Outscraper filters</p>
+
+  <div class="filter-block mb-4">
+    <label class="form-label fw-semibold" for="{{ filter_form.outscraper_category.id_for_label }}">
+      <span class="text-danger">*</span> {{ filter_form.outscraper_category.label }}
+    </label>
+    {{ filter_form.outscraper_category }}
+    {% if filter_form.outscraper_category.help_text %}
+    <div class="form-text">{{ filter_form.outscraper_category.help_text }}</div>
+    {% endif %}
+    {% if filter_form.outscraper_category.errors %}
+    <div class="text-danger small">{{ filter_form.outscraper_category.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  <div class="filter-block mb-4">
+    <label class="form-label fw-semibold" for="{{ filter_form.outscraper_location.id_for_label }}">
+      <span class="text-danger">*</span> {{ filter_form.outscraper_location.label }}
+    </label>
+    {{ filter_form.outscraper_location }}
+    {% if filter_form.outscraper_location.help_text %}
+    <div class="form-text">{{ filter_form.outscraper_location.help_text }}</div>
+    {% endif %}
+    {% if filter_form.outscraper_location.errors %}
+    <div class="text-danger small">{{ filter_form.outscraper_location.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  <div class="filter-block mb-4">
+    <label class="form-label fw-semibold" for="{{ filter_form.outscraper_max_results.id_for_label }}">
+      {{ filter_form.outscraper_max_results.label }}
+      <span class="text-muted fw-normal small">(0 = unlimited)</span>
+    </label>
+    {{ filter_form.outscraper_max_results }}
+    {% if filter_form.outscraper_max_results.errors %}
+    <div class="text-danger small">{{ filter_form.outscraper_max_results.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  <div class="filter-block mb-3">
+    <label class="form-label fw-semibold">{{ filter_form.outscraper_services.label }}</label>
+    {{ filter_form.outscraper_services }}
+    {% if filter_form.outscraper_services.errors %}
+    <div class="text-danger small">{{ filter_form.outscraper_services.errors.0 }}</div>
+    {% endif %}
+  </div>
+
+  <details class="enrichment-panel mb-2">
+    <summary class="small fw-semibold">Advanced parameters</summary>
+    <div class="enrichment-body pt-3">
+      <div class="filter-block mb-4">
+        <label class="form-label fw-semibold">{{ filter_form.outscraper_quick_filters.label }}</label>
+        {{ filter_form.outscraper_quick_filters }}
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label fw-semibold">{{ filter_form.outscraper_language.label }}</label>
+          {{ filter_form.outscraper_language }}
+        </div>
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label fw-semibold">{{ filter_form.outscraper_places_per_query.label }}</label>
+          {{ filter_form.outscraper_places_per_query }}
+        </div>
+        <div class="col-sm-6 col-md-4">
+          <label class="form-label fw-semibold">{{ filter_form.outscraper_skip.label }}</label>
+          {{ filter_form.outscraper_skip }}
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-4 mb-2">
+        <div class="form-check">
+          {{ filter_form.outscraper_delete_duplicates }}
+          <label class="form-check-label" for="{{ filter_form.outscraper_delete_duplicates.id_for_label }}">
+            {{ filter_form.outscraper_delete_duplicates.label }}
+          </label>
+        </div>
+        <div class="form-check">
+          {{ filter_form.outscraper_use_zip_codes }}
+          <label class="form-check-label" for="{{ filter_form.outscraper_use_zip_codes.id_for_label }}">
+            {{ filter_form.outscraper_use_zip_codes.label }}
+          </label>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="enrichment-panel">
+    <summary class="small fw-semibold">Other parameters</summary>
+    <div class="enrichment-body pt-3">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">{{ filter_form.outscraper_task_title.label }}</label>
+        {{ filter_form.outscraper_task_title }}
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">{{ filter_form.outscraper_result_extension.label }}</label>
+          {{ filter_form.outscraper_result_extension }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">{{ filter_form.extra_tags.label }}</label>
+          {{ filter_form.extra_tags }}
+        </div>
+      </div>
+      <div class="mb-0">
+        <label class="form-label fw-semibold">{{ filter_form.outscraper_columns_to_return.label }}</label>
+        {{ filter_form.outscraper_columns_to_return }}
+      </div>
+    </div>
+  </details>
+</div>

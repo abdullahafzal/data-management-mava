@@ -4,6 +4,7 @@ from .models import (
     Campaign,
     CleanedDataset,
     DataImport,
+    FilterAnalysis,
     SavedCategory,
     SavedLocationSuggestion,
     VerificationExport,
@@ -60,3 +61,13 @@ class DataImportAdmin(admin.ModelAdmin):
 class VerificationJobAdmin(admin.ModelAdmin):
     list_display = ['cleaned_dataset', 'status', 'status_column', 'completed_at']
     inlines = [VerificationExportInline]
+
+
+@admin.register(FilterAnalysis)
+class FilterAnalysisAdmin(admin.ModelAdmin):
+    list_display = [
+        'data_import', 'recommendation', 'match_type', 'confidence', 'status', 'created_at',
+    ]
+    list_filter = ['status', 'recommendation', 'match_type']
+    search_fields = ['headline', 'summary', 'data_import__outscraper_category']
+    readonly_fields = ['context_snapshot', 'reasoning', 'warnings', 'model_name']

@@ -9,6 +9,8 @@ from .importer import _read_dataframe, dataframe_to_csv_bytes
 def build_cleaned_csv(
     source_path: str | Path,
     selected_columns: list[str],
+    *,
+    row_limit: int = 0,
 ) -> tuple[bytes, int]:
     """
     Keep only user-selected columns from the original Outscraper file.
@@ -29,5 +31,8 @@ def build_cleaned_csv(
         lambda row: any(str(v).strip() for v in row), axis=1
     )
     cleaned = cleaned[mask]
+
+    if row_limit and row_limit > 0:
+        cleaned = cleaned.head(int(row_limit))
 
     return dataframe_to_csv_bytes(cleaned), len(cleaned)

@@ -14,6 +14,16 @@ urlpatterns = [
     path('campaigns/new/', views.CampaignCreateView.as_view(), name='campaign_create'),
     path('campaigns/<int:pk>/', views.CampaignDetailView.as_view(), name='campaign_detail'),
     path(
+        'campaigns/<int:campaign_pk>/analyze-filters/',
+        views.CampaignFilterAnalyzeView.as_view(),
+        name='campaign_filter_analyze',
+    ),
+    path(
+        'campaigns/<int:campaign_pk>/reset-filters/',
+        views.CampaignFilterResetView.as_view(),
+        name='campaign_filter_reset',
+    ),
+    path(
         'campaigns/<int:campaign_pk>/upload/',
         views.DataImportUploadView.as_view(),
         name='upload',
@@ -57,6 +67,36 @@ urlpatterns = [
         'imports/<int:import_pk>/verification/',
         views.VerificationUploadView.as_view(),
         name='verification_upload',
+    ),
+    path(
+        'imports/<int:import_pk>/verification/run/',
+        views.MillionVerifierBulkRunView.as_view(),
+        name='verification_run_api',
+    ),
+    path(
+        'imports/<int:import_pk>/smartlead/push-good/',
+        views.SmartleadPushGoodEmailsView.as_view(),
+        name='smartlead_push_good',
+    ),
+    path(
+        'imports/<int:import_pk>/xverify/verify-phones/',
+        views.XVerifyPhonesView.as_view(),
+        name='xverify_verify_phones',
+    ),
+    path(
+        'imports/<int:import_pk>/download/xverify/',
+        views.DownloadXVerifyResultsView.as_view(),
+        name='download_xverify',
+    ),
+    path(
+        'imports/<int:import_pk>/simpletexting/push-phones/',
+        views.SimpleTextingPushPhonesView.as_view(),
+        name='simpletexting_push_phones',
+    ),
+    path(
+        'imports/<int:import_pk>/analyze-filters/',
+        views.FilterAnalysisRunView.as_view(),
+        name='filter_analysis_run',
     ),
     path(
         'exports/<int:export_pk>/download/',

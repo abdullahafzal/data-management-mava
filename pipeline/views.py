@@ -8,20 +8,26 @@ from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
+
+import pandas as pd
 
 from .constants import resolve_automatic_columns
 from .forms import (
     CampaignForm,
     ColumnSelectionForm,
     DataImportUploadForm,
+    OutscraperFiltersForm,
     VerificationUploadForm,
 )
 from .models import (
     Campaign,
     CleanedDataset,
     DataImport,
+    FilterAnalysis,
+    PhoneVerificationJob,
     VerificationExport,
     VerificationJob,
 )
@@ -34,6 +40,18 @@ from .services.suggestions import (
     suggest_categories,
     suggest_locations,
 )
+from .services.millionverifier_bulk import (
+    MillionVerifierBulkError,
+    download_report_csv,
+    upload_csv,
+    wait_until_done,
+)
+from .services.smartlead_api import SmartleadError, add_leads, create_campaign
+from .services.simpletexting_api import SimpleTextingError, create_contact_on_lists, get_or_create_list
+from .services.xverify_api import XVerifyError, verify_phone
+from .services.xverify_results import build_results_csv, good_phones_from_csv_bytes, is_valid_status
+from .services.filter_context import build_analysis_context, build_analysis_context_from_filters
+from .services.openai_analysis import OpenAIAnalysisError, analyze_filter_context
 from .services import (
     build_cleaned_csv,
     build_diana_handoff_csv,
@@ -146,6 +164,204 @@ def _millionverifier_configured() -> bool:
 def _phone_validation_configured() -> bool:
     return bool(getattr(settings, 'PHONE_VALIDATION_API_KEY', ''))
 
+def _smartlead_configured() -> bool:
+    return bool(getattr(settings, 'SMARTLEAD_API_KEY', ''))
+
+
+def _simpletexting_configured() -> bool:
+    return bool(getattr(settings, 'SIMPLETEXTING_API_KEY', ''))
+
+
+def _xverify_configured() -> bool:
+    return bool(getattr(settings, 'PHONE_VALIDATION_API_KEY', '')) and bool(getattr(settings, 'XVERIFY_DOMAIN', ''))
+
+
+def _campaign_analysis_session_key(campaign_pk: int) -> str:
+    return f'campaign_{campaign_pk}_filter_analysis'
+
+
+def _get_campaign_filter_analysis(request, campaign_pk: int) -> dict | None:
+    return request.session.get(_campaign_analysis_session_key(campaign_pk))
+
+
+def _fingerprint_from_filter_form(form: OutscraperFiltersForm) -> str:
+    return build_filter_fingerprint(
+        form.cleaned_data['outscraper_category'],
+        form.cleaned_data['outscraper_location'],
+        form.cleaned_data.get('outscraper_max_results'),
+        form.cleaned_data.get('outscraper_services') or [],
+        parse_extra_tags(form.cleaned_data.get('extra_tags', '')),
+        advanced=pack_advanced_params(form.cleaned_data),
+    )
+
+
+def _filter_form_initial_from_session(stored: dict) -> dict:
+    return stored.get('form_initial') or {}
+
+
+def _filter_summary_from_initial(form_initial: dict) -> dict:
+    return {
+        'category': form_initial.get('outscraper_category', ''),
+        'location': form_initial.get('outscraper_location', ''),
+        'max_results': form_initial.get('outscraper_max_results'),
+    }
+
+
+def _store_campaign_filter_step(
+    request,
+    campaign_pk: int,
+    *,
+    fingerprint: str,
+    form_initial: dict,
+    status: str,
+    parsed: dict | None = None,
+    context: dict | None = None,
+    error_message: str = '',
+) -> None:
+    """Unlock Step 2 (upload). status: completed | failed."""
+    from django.utils.dateformat import format as date_format
+    from django.utils import timezone
+
+    now = timezone.now()
+    parsed = parsed or {}
+    context = context or {}
+    request.session[_campaign_analysis_session_key(campaign_pk)] = {
+        'fingerprint': fingerprint,
+        'form_initial': form_initial,
+        'status': status,
+        'error_message': error_message,
+        'recommendation': parsed.get('recommendation', ''),
+        'headline': parsed.get('headline', ''),
+        'summary': parsed.get('summary', ''),
+        'reasoning': parsed.get('reasoning') or [],
+        'warnings': parsed.get('warnings') or [],
+        'confidence': parsed.get('confidence', ''),
+        'suggested_reuse_import_id': parsed.get('suggested_reuse_import_id'),
+        'exact_match_count': context.get('database_stats', {}).get('exact_duplicate_count', 0),
+        'similar_match_count': context.get('database_stats', {}).get('similar_import_count', 0),
+        'match_type': context.get('match_type', ''),
+        'analyzed_at': date_format(now, 'M j, Y g:i A'),
+        'filter_summary': _filter_summary_from_initial(form_initial),
+    }
+    request.session.modified = True
+
+
+def _store_campaign_filter_analysis(
+    request,
+    campaign_pk: int,
+    *,
+    fingerprint: str,
+    form_initial: dict,
+    parsed: dict,
+    context: dict,
+) -> None:
+    _store_campaign_filter_step(
+        request,
+        campaign_pk,
+        fingerprint=fingerprint,
+        form_initial=form_initial,
+        status='completed',
+        parsed=parsed,
+        context=context,
+    )
+
+
+def _clear_campaign_filter_analysis(request, campaign_pk: int) -> None:
+    key = _campaign_analysis_session_key(campaign_pk)
+    if key in request.session:
+        del request.session[key]
+        request.session.modified = True
+
+
+def _require_matching_filter_analysis(request, campaign_pk: int, fingerprint: str) -> bool:
+    stored = _get_campaign_filter_analysis(request, campaign_pk)
+    if not stored:
+        return False
+    return stored.get('fingerprint') == fingerprint
+
+
+def _openai_configured() -> bool:
+    return bool(getattr(settings, 'OPENAI_API_KEY', ''))
+
+
+def _latest_filter_analysis(data_import: DataImport) -> FilterAnalysis | None:
+    return (
+        data_import.filter_analyses.filter(status=FilterAnalysis.Status.COMPLETED)
+        .order_by('-created_at')
+        .first()
+    )
+
+
+def _filter_analysis_ui_context(data_import: DataImport) -> dict:
+    return {
+        'filter_analysis': _latest_filter_analysis(data_import),
+        'openai_ready': _openai_configured(),
+    }
+
+
+def _duplicate_confirm_context(
+    campaign: Campaign,
+    data_import: DataImport,
+    duplicates: list[DataImport],
+    *,
+    is_automatic: bool,
+    request=None,
+) -> dict:
+    ctx = {
+        'campaign': campaign,
+        'data_import': data_import,
+        'duplicates': duplicates,
+        'is_automatic': is_automatic,
+    }
+    if request is not None:
+        ctx['filter_analysis'] = _get_campaign_filter_analysis(request, campaign.pk)
+    return ctx
+
+
+def run_filter_analysis(data_import: DataImport) -> FilterAnalysis:
+    analysis = FilterAnalysis.objects.create(
+        data_import=data_import,
+        status=FilterAnalysis.Status.PENDING,
+    )
+    try:
+        context = build_analysis_context(data_import)
+        result = analyze_filter_context(
+            settings.OPENAI_API_KEY,
+            context,
+            model=getattr(settings, 'OPENAI_MODEL', 'gpt-4o-mini'),
+        )
+        parsed = result['parsed']
+        rec = str(parsed.get('recommendation') or '').strip()
+        valid_recs = {c.value for c in FilterAnalysis.Recommendation}
+        if rec not in valid_recs:
+            rec = FilterAnalysis.Recommendation.REVIEW
+
+        reuse_id = parsed.get('suggested_reuse_import_id')
+        if reuse_id is not None:
+            try:
+                reuse_id = int(reuse_id)
+            except (TypeError, ValueError):
+                reuse_id = None
+
+        analysis.match_type = context.get('match_type', '')
+        analysis.recommendation = rec
+        analysis.headline = str(parsed.get('headline') or '')[:255]
+        analysis.summary = str(parsed.get('summary') or '')
+        analysis.reasoning = parsed.get('reasoning') or []
+        analysis.warnings = parsed.get('warnings') or []
+        analysis.suggested_reuse_import_id = reuse_id
+        analysis.confidence = str(parsed.get('confidence') or '')[:16]
+        analysis.context_snapshot = context
+        analysis.model_name = result.get('model', '')
+        analysis.status = FilterAnalysis.Status.COMPLETED
+        analysis.save()
+    except Exception as exc:
+        analysis.status = FilterAnalysis.Status.FAILED
+        analysis.error_message = str(exc)
+        analysis.save()
+        raise
+    return analysis
+
 
 def _load_import_preview(data_import: DataImport) -> tuple[dict | None, str]:
     if not data_import.original_file:
@@ -165,6 +381,37 @@ def _process_upload_file(data_import: DataImport, uploaded_file=None) -> None:
     data_import.file_format = parsed['file_format']
     data_import.status = DataImport.Status.PARSED
     data_import.save()
+
+
+def _render_campaign_detail_page(
+    request,
+    campaign: Campaign,
+    *,
+    filter_form=None,
+    upload_form=None,
+    upload_unlocked: bool | None = None,
+):
+    stored = _get_campaign_filter_analysis(request, campaign.pk)
+    if upload_unlocked is None:
+        upload_unlocked = bool(stored)
+    filter_initial = _upload_form_initial(campaign)
+    if stored:
+        filter_initial = {**filter_initial, **_filter_form_initial_from_session(stored)}
+    if filter_form is None:
+        filter_form = OutscraperFiltersForm(initial=filter_initial)
+    if upload_form is None:
+        upload_form = DataImportUploadForm(
+            initial=filter_initial,
+            automatic=campaign.is_automatic,
+        )
+    return render(request, 'pipeline/campaign_detail.html', {
+        'campaign': campaign,
+        'filter_form': filter_form,
+        'upload_form': upload_form,
+        'filter_analysis': stored,
+        'upload_unlocked': upload_unlocked,
+        'openai_ready': _openai_configured(),
+    })
 
 
 class CampaignListView(View):
@@ -202,14 +449,139 @@ class CampaignDetailView(View):
             ),
             pk=pk,
         )
+        stored = _get_campaign_filter_analysis(request, pk)
+        upload_unlocked = bool(stored)
+
+        filter_initial = _upload_form_initial(campaign)
+        if stored:
+            filter_initial = {**filter_initial, **_filter_form_initial_from_session(stored)}
+
+        filter_form = OutscraperFiltersForm(initial=filter_initial)
         upload_form = DataImportUploadForm(
-            initial=_upload_form_initial(campaign),
+            initial=filter_initial,
             automatic=campaign.is_automatic,
         )
-        return render(request, 'pipeline/campaign_detail.html', {
-            'campaign': campaign,
-            'upload_form': upload_form,
-        })
+
+        return _render_campaign_detail_page(
+            request,
+            campaign,
+            filter_form=filter_form,
+            upload_form=upload_form,
+            upload_unlocked=upload_unlocked,
+        )
+
+
+class CampaignFilterAnalyzeView(View):
+    """Step 1: validate filters, run OpenAI, unlock upload."""
+
+    def post(self, request, campaign_pk):
+        campaign = get_object_or_404(Campaign, pk=campaign_pk)
+        filter_form = OutscraperFiltersForm(request.POST)
+
+        if not filter_form.is_valid():
+            messages.error(request, 'Fix filter errors before running AI analysis.')
+            return _render_campaign_detail_page(
+                request,
+                campaign,
+                filter_form=filter_form,
+                upload_form=DataImportUploadForm(
+                    initial=filter_form.data,
+                    automatic=campaign.is_automatic,
+                ),
+                upload_unlocked=False,
+            )
+
+        fingerprint = _fingerprint_from_filter_form(filter_form)
+        form_initial = {
+            k: filter_form.cleaned_data.get(k)
+            for k in filter_form.fields
+            if k in filter_form.cleaned_data
+        }
+
+        if not _openai_configured():
+            _store_campaign_filter_step(
+                request,
+                campaign_pk,
+                fingerprint=fingerprint,
+                form_initial=form_initial,
+                status='failed',
+                error_message='OpenAI API key is missing (set OPENAI_API_KEY).',
+            )
+            messages.warning(
+                request,
+                'AI analysis is not configured — you can still upload your Outscraper file (Step 2).',
+            )
+            return redirect('pipeline:campaign_detail', pk=campaign_pk)
+
+        try:
+            context = build_analysis_context_from_filters(
+                category=filter_form.cleaned_data['outscraper_category'],
+                location=filter_form.cleaned_data['outscraper_location'],
+                max_results=filter_form.cleaned_data.get('outscraper_max_results'),
+                services=filter_form.cleaned_data.get('outscraper_services') or [],
+                extra_tags=parse_extra_tags(filter_form.cleaned_data.get('extra_tags', '')),
+                advanced=pack_advanced_params(filter_form.cleaned_data),
+                campaign_name=campaign.name,
+                fingerprint=fingerprint,
+            )
+            result = analyze_filter_context(
+                settings.OPENAI_API_KEY,
+                context,
+                model=getattr(settings, 'OPENAI_MODEL', 'gpt-4o-mini'),
+            )
+            parsed = result['parsed']
+            _store_campaign_filter_analysis(
+                request,
+                campaign_pk,
+                fingerprint=fingerprint,
+                form_initial=form_initial,
+                parsed=parsed,
+                context=context,
+            )
+            messages.success(
+                request,
+                'AI analysis complete — you can now upload your Outscraper file (Step 2).',
+            )
+        except OpenAIAnalysisError as exc:
+            _store_campaign_filter_step(
+                request,
+                campaign_pk,
+                fingerprint=fingerprint,
+                form_initial=form_initial,
+                status='failed',
+                error_message=str(exc),
+            )
+            messages.warning(
+                request,
+                f'AI analysis failed: {exc} You can still upload your Outscraper file (Step 2).',
+            )
+        except Exception as exc:
+            _store_campaign_filter_step(
+                request,
+                campaign_pk,
+                fingerprint=fingerprint,
+                form_initial=form_initial,
+                status='failed',
+                error_message=str(exc),
+            )
+            messages.warning(
+                request,
+                f'AI analysis failed: {exc} You can still upload your Outscraper file (Step 2).',
+            )
+        else:
+            return redirect('pipeline:campaign_detail', pk=campaign_pk)
+
+        return redirect('pipeline:campaign_detail', pk=campaign_pk)
+
+
+class CampaignFilterResetView(View):
+    """Clear analysis and return to Step 1 (edit filters)."""
+
+    def post(self, request, campaign_pk):
+        get_object_or_404(Campaign, pk=campaign_pk)
+        _clear_campaign_filter_analysis(request, campaign_pk)
+        messages.info(request, 'Filters reset — enter filters and run AI analysis again.')
+        return redirect('pipeline:campaign_detail', pk=campaign_pk)
 
 
 class ImportHistoryView(View):
@@ -267,16 +639,30 @@ class DataImportUploadView(View):
             return self._post_automatic(request, campaign)
         return self._post_manual(request, campaign)
 
+    def _block_if_not_analyzed(self, request, campaign, form):
+        if not form.is_valid():
+            return None
+        fingerprint = _fingerprint_from_filter_form(form)
+        if _require_matching_filter_analysis(request, campaign.pk, fingerprint):
+            return None
+        messages.error(
+            request,
+            'Run AI filter analysis (Step 1) before uploading. '
+            'If you changed filters, analyze again.',
+        )
+        return redirect('pipeline:campaign_detail', pk=campaign.pk)
+
     def _post_automatic(self, request, campaign):
         form = DataImportUploadForm(
             request.POST, request.FILES, automatic=True,
         )
         if not form.is_valid():
             messages.error(request, 'Please fix the errors below.')
-            return render(request, 'pipeline/campaign_detail.html', {
-                'campaign': campaign,
-                'upload_form': form,
-            })
+            return _render_campaign_detail_page(request, campaign, upload_form=form)
+
+        blocked = self._block_if_not_analyzed(request, campaign, form)
+        if blocked:
+            return blocked
 
         duplicates = find_matching_imports(
             build_filter_fingerprint(
@@ -301,15 +687,13 @@ class DataImportUploadView(View):
         if duplicates and not confirm:
             data_import.status = DataImport.Status.AWAITING_CONFIRM
             data_import.save()
-            return render(request, 'pipeline/upload_confirm_duplicate.html', {
-                'campaign': campaign,
-                'data_import': data_import,
-                'duplicates': duplicates,
-                'is_automatic': True,
-            })
+            return render(request, 'pipeline/upload_confirm_duplicate.html', _duplicate_confirm_context(
+                campaign, data_import, duplicates, is_automatic=True, request=request,
+            ))
 
         _sync_campaign_filters(campaign, form)
         _remember_filter_suggestions(form)
+        _clear_campaign_filter_analysis(request, campaign.pk)
         return self._finish_automatic_import(
             request, campaign, data_import, form.cleaned_data['original_file'],
             duplicates=duplicates, confirmed=bool(confirm),
@@ -362,10 +746,11 @@ class DataImportUploadView(View):
         form = DataImportUploadForm(request.POST, request.FILES, automatic=False)
         if not form.is_valid():
             messages.error(request, 'Please fix the errors below.')
-            return render(request, 'pipeline/campaign_detail.html', {
-                'campaign': campaign,
-                'upload_form': form,
-            })
+            return _render_campaign_detail_page(request, campaign, upload_form=form)
+
+        blocked = self._block_if_not_analyzed(request, campaign, form)
+        if blocked:
+            return blocked
 
         fingerprint = build_filter_fingerprint(
             form.cleaned_data['outscraper_category'],
@@ -386,17 +771,15 @@ class DataImportUploadView(View):
         if duplicates and not confirm:
             data_import.status = DataImport.Status.AWAITING_CONFIRM
             data_import.save()
-            return render(request, 'pipeline/upload_confirm_duplicate.html', {
-                'campaign': campaign,
-                'data_import': data_import,
-                'duplicates': duplicates,
-                'is_automatic': False,
-            })
+            return render(request, 'pipeline/upload_confirm_duplicate.html', _duplicate_confirm_context(
+                campaign, data_import, duplicates, is_automatic=False, request=request,
+            ))
 
         data_import.status = DataImport.Status.UPLOADED
         data_import.save()
         _sync_campaign_filters(campaign, form)
         _remember_filter_suggestions(form)
+        _clear_campaign_filter_analysis(request, campaign.pk)
 
         try:
             _process_upload_file(data_import, form.cleaned_data['original_file'])
@@ -474,12 +857,13 @@ class DataImportConfirmView(View):
         duplicates = find_matching_imports(
             data_import.filter_fingerprint, exclude_pk=data_import.pk
         )
-        return render(request, 'pipeline/upload_confirm_duplicate.html', {
-            'campaign': data_import.campaign,
-            'data_import': data_import,
-            'duplicates': duplicates,
-            'is_automatic': data_import.campaign.is_automatic,
-        })
+        return render(request, 'pipeline/upload_confirm_duplicate.html', _duplicate_confirm_context(
+            data_import.campaign,
+            data_import,
+            duplicates,
+            is_automatic=data_import.campaign.is_automatic,
+            request=request,
+        ))
 
 
 class AutomaticResultsView(View):
@@ -557,6 +941,7 @@ class SelectColumnsView(View):
             csv_bytes, row_count = build_cleaned_csv(
                 data_import.original_file.path,
                 selected,
+                row_limit=getattr(settings, 'MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 0),
             )
         except Exception as exc:
             messages.error(request, f'Cleaning failed: {exc}')
@@ -579,6 +964,7 @@ class ImportDetailView(View):
             DataImport.objects.select_related(
                 'campaign',
                 'cleaned_dataset__verification_job',
+                'cleaned_dataset__phone_verification_job',
             ).prefetch_related(
                 'cleaned_dataset__verification_job__exports',
             ),
@@ -587,9 +973,13 @@ class ImportDetailView(View):
         if data_import.campaign.is_automatic:
             return redirect('pipeline:automatic_results', import_pk=import_pk)
         verification_job = None
+        phone_verification_job = None
         if hasattr(data_import, 'cleaned_dataset'):
             verification_job = getattr(
                 data_import.cleaned_dataset, 'verification_job', None
+            )
+            phone_verification_job = getattr(
+                data_import.cleaned_dataset, 'phone_verification_job', None
             )
 
         preview, preview_error = _load_import_preview(data_import)
@@ -597,11 +987,322 @@ class ImportDetailView(View):
         return render(request, 'pipeline/import_detail.html', {
             'data_import': data_import,
             'verification_job': verification_job,
+            'phone_verification_job': phone_verification_job,
+            **_filter_analysis_ui_context(data_import),
             'millionverifier_ready': _millionverifier_configured(),
             'phone_verifier_ready': _phone_validation_configured(),
+            'smartlead_ready': _smartlead_configured(),
+            'simpletexting_ready': _simpletexting_configured(),
+            'xverify_ready': _xverify_configured(),
             'preview': preview,
             'preview_error': preview_error,
         })
+
+
+class MillionVerifierBulkRunView(View):
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('campaign', 'cleaned_dataset'),
+            pk=import_pk,
+        )
+        cleaned = getattr(data_import, 'cleaned_dataset', None)
+        if not cleaned or not cleaned.file:
+            messages.error(request, 'Create a cleaned export first.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+        if not _millionverifier_configured():
+            messages.error(request, 'MillionVerifier API key is missing.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+
+        try:
+            df = pd.read_csv(cleaned.file.path, dtype=str, keep_default_na=False).fillna('')
+            candidates = [c for c in ['email', 'email_1', 'email_2', 'email_3'] if c in df.columns]
+            if not candidates:
+                messages.error(request, 'No email column found in cleaned CSV (expected email/email_1/email_2/email_3).')
+                return redirect('pipeline:import_detail', import_pk=import_pk)
+            emails: list[str] = []
+            for _, row in df.iterrows():
+                for col in candidates:
+                    val = str(row.get(col, '')).strip()
+                    if val:
+                        emails.append(val)
+                        break
+            emails = sorted({e.lower(): e for e in emails}.values())
+            limit = int(getattr(settings, 'MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 5) or 5)
+            if limit <= 0:
+                # Safety: never upload huge files by accident in the UI action.
+                # Set MILLIONVERIFIER_UPLOAD_ROW_LIMIT explicitly to disable.
+                limit = 5
+            emails = emails[:limit]
+            if not emails:
+                messages.error(request, 'No emails found in cleaned CSV.')
+                return redirect('pipeline:import_detail', import_pk=import_pk)
+
+            buf = io.StringIO()
+            buf.write('email\n')
+            for e in emails:
+                buf.write(f'{e}\n')
+            csv_bytes = buf.getvalue().encode('utf-8')
+
+            job, _ = VerificationJob.objects.get_or_create(cleaned_dataset=cleaned)
+            job.status = VerificationJob.Status.PROCESSING
+            job.error_message = ''
+            job.status_column = ''
+            job.completed_at = None
+            job.save()
+
+            up = upload_csv(settings.MILLIONVERIFIER_API_KEY, csv_bytes, filename=f'mv_{data_import.pk}.csv')
+            wait_until_done(settings.MILLIONVERIFIER_API_KEY, up.file_id, timeout_seconds=180, poll_every_seconds=3.0)
+            report_bytes = download_report_csv(settings.MILLIONVERIFIER_API_KEY, up.file_id, filter_name='all')
+
+            job.source_file.save(
+                f'mv_report_{data_import.campaign_id}_{data_import.pk}.csv',
+                ContentFile(report_bytes),
+                save=True,
+            )
+
+            detected_col, exports = split_verification_results(job.source_file.path)
+            job.status_column = detected_col
+            job.exports.all().delete()
+            for category, (out_bytes, row_count) in sorted(exports.items()):
+                exp = VerificationExport(job=job, category=category, row_count=row_count)
+                exp.file.save(
+                    f'{category}_{data_import.campaign_id}_{data_import.pk}.csv',
+                    ContentFile(out_bytes),
+                    save=True,
+                )
+            job.status = VerificationJob.Status.COMPLETED
+            job.completed_at = timezone.now()
+            job.save()
+
+            messages.success(request, f'MillionVerifier complete. Uploaded {len(emails)} emails (test limit applied).')
+        except MillionVerifierBulkError as exc:
+            messages.error(request, f'MillionVerifier failed: {exc}')
+        except Exception as exc:
+            messages.error(request, f'MillionVerifier failed: {exc}')
+        return redirect('pipeline:import_detail', import_pk=import_pk)
+
+
+class SmartleadPushGoodEmailsView(View):
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('campaign', 'cleaned_dataset__verification_job'),
+            pk=import_pk,
+        )
+        if not _smartlead_configured():
+            messages.error(request, 'Smartlead API key is missing.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+        job = getattr(getattr(data_import, 'cleaned_dataset', None), 'verification_job', None)
+        if not job or job.status != VerificationJob.Status.COMPLETED:
+            messages.error(request, 'Run MillionVerifier first (step 3).')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+        good = job.exports.filter(category='good').first()
+        if not good or not good.file:
+            messages.error(request, 'No "good" export found. Download MV report and confirm categories.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+
+        try:
+            df = pd.read_csv(good.file.path, dtype=str, keep_default_na=False).fillna('')
+            email_col = None
+            for c in df.columns:
+                if c.strip().lower() in {'email', 'email_address', 'email address'}:
+                    email_col = c
+                    break
+            if not email_col:
+                email_col = df.columns[0] if len(df.columns) else None
+            if not email_col:
+                messages.error(request, 'Good export has no columns.')
+                return redirect('pipeline:import_detail', import_pk=import_pk)
+
+            emails = [str(x).strip() for x in df[email_col].tolist()]
+            emails = [e for e in emails if e]
+            emails = list(dict.fromkeys(emails))  # preserve order unique
+            if not emails:
+                messages.error(request, 'No emails found in "good" export.')
+                return redirect('pipeline:import_detail', import_pk=import_pk)
+
+            camp_resp = create_campaign(settings.SMARTLEAD_API_KEY, data_import.campaign.name)
+            campaign_id = camp_resp.get('id') or camp_resp.get('campaign_id') or camp_resp.get('campaignId')
+            if not campaign_id:
+                raise SmartleadError(f'Could not read campaign id from response: {camp_resp}')
+
+            leads = [{"email": e} for e in emails[:400]]
+            lead_resp = add_leads(settings.SMARTLEAD_API_KEY, campaign_id, leads)
+            messages.success(
+                request,
+                f'Smartlead: created campaign {campaign_id} and pushed {len(leads)} leads.',
+            )
+        except SmartleadError as exc:
+            messages.error(request, f'Smartlead failed: {exc}')
+        except Exception as exc:
+            messages.error(request, f'Smartlead failed: {exc}')
+        return redirect('pipeline:import_detail', import_pk=import_pk)
+
+
+class XVerifyPhonesView(View):
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('campaign', 'cleaned_dataset'),
+            pk=import_pk,
+        )
+        cleaned = getattr(data_import, 'cleaned_dataset', None)
+        if not cleaned or not cleaned.file:
+            messages.error(request, 'Create a cleaned export first.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+        if not _xverify_configured():
+            messages.error(request, 'XVerify is missing config (PHONE_VALIDATION_API_KEY or XVERIFY_DOMAIN).')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+
+        try:
+            df = pd.read_csv(cleaned.file.path, dtype=str, keep_default_na=False).fillna('')
+            phone_cols = [c for c in ['phone', 'phone_1', 'phone_2', 'phone_3'] if c in df.columns]
+            if not phone_cols:
+                messages.error(request, 'No phone column found in cleaned CSV (expected phone/phone_1/phone_2/phone_3).')
+                return redirect('pipeline:import_detail', import_pk=import_pk)
+
+            phones: list[str] = []
+            for _, row in df.iterrows():
+                for col in phone_cols:
+                    val = str(row.get(col, '')).strip()
+                    if val:
+                        phones.append(val)
+                        break
+            phones = list(dict.fromkeys(phones))
+            limit = int(getattr(settings, 'MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 0) or 0)
+            if limit and limit > 0:
+                phones = phones[:limit]
+            else:
+                phones = phones[:5]
+            if not phones:
+                messages.error(request, 'No phone numbers found in cleaned CSV.')
+                return redirect('pipeline:import_detail', import_pk=import_pk)
+
+            job, _ = PhoneVerificationJob.objects.get_or_create(cleaned_dataset=cleaned)
+            job.status = PhoneVerificationJob.Status.PROCESSING
+            job.error_message = ''
+            job.completed_at = None
+            job.save()
+
+            result_rows: list[dict] = []
+            valid_count = 0
+            for p in phones:
+                row = {'input_phone': p, 'response': {}, 'error': ''}
+                try:
+                    res = verify_phone(
+                        settings.PHONE_VALIDATION_API_KEY,
+                        settings.XVERIFY_DOMAIN,
+                        p,
+                    )
+                    row['response'] = res
+                    if is_valid_status(str(res.get('status') or '')):
+                        valid_count += 1
+                except XVerifyError as exc:
+                    row['error'] = str(exc)
+                result_rows.append(row)
+
+            csv_bytes = build_results_csv(result_rows)
+            fname = f'xverify_{data_import.campaign_id}_{data_import.pk}.csv'
+            job.results_file.save(fname, ContentFile(csv_bytes), save=False)
+            job.total_count = len(phones)
+            job.valid_count = valid_count
+            job.status = PhoneVerificationJob.Status.COMPLETED
+            job.completed_at = timezone.now()
+            job.save()
+
+            messages.success(
+                request,
+                f'XVerify complete. {valid_count}/{len(phones)} numbers valid — download results below.',
+            )
+        except XVerifyError as exc:
+            if cleaned and hasattr(cleaned, 'phone_verification_job'):
+                job = cleaned.phone_verification_job
+                job.status = PhoneVerificationJob.Status.FAILED
+                job.error_message = str(exc)
+                job.save()
+            messages.error(request, f'XVerify failed: {exc}')
+        except Exception as exc:
+            if cleaned:
+                job, _ = PhoneVerificationJob.objects.get_or_create(cleaned_dataset=cleaned)
+                job.status = PhoneVerificationJob.Status.FAILED
+                job.error_message = str(exc)
+                job.save()
+            messages.error(request, f'XVerify failed: {exc}')
+        return redirect('pipeline:import_detail', import_pk=import_pk)
+
+
+class DownloadXVerifyResultsView(View):
+    def get(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('cleaned_dataset__phone_verification_job'),
+            pk=import_pk,
+        )
+        job = getattr(
+            getattr(data_import, 'cleaned_dataset', None),
+            'phone_verification_job',
+            None,
+        )
+        if not job or job.status != PhoneVerificationJob.Status.COMPLETED or not job.results_file:
+            raise Http404('No XVerify results for this import.')
+        return FileResponse(
+            job.results_file.open('rb'),
+            as_attachment=True,
+            filename=job.results_file.name.split('/')[-1],
+        )
+
+
+class SimpleTextingPushPhonesView(View):
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('campaign', 'cleaned_dataset__phone_verification_job'),
+            pk=import_pk,
+        )
+        if not _simpletexting_configured():
+            messages.error(request, 'SimpleTexting API key is missing.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+
+        job = getattr(
+            getattr(data_import, 'cleaned_dataset', None),
+            'phone_verification_job',
+            None,
+        )
+        if not job or job.status != PhoneVerificationJob.Status.COMPLETED or not job.results_file:
+            messages.error(request, 'No verified phone numbers found. Run XVerify first (step 4).')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+        with job.results_file.open('rb') as f:
+            good_numbers = good_phones_from_csv_bytes(f.read())
+        if not good_numbers:
+            messages.error(request, 'XVerify ran but no valid phone numbers were found.')
+            return redirect('pipeline:import_detail', import_pk=import_pk)
+
+        try:
+            list_id, created_new = get_or_create_list(
+                settings.SIMPLETEXTING_API_KEY,
+                data_import.campaign.name[:41],
+            )
+            ok = 0
+            for n in good_numbers[:400]:
+                create_contact_on_lists(
+                    settings.SIMPLETEXTING_API_KEY,
+                    n,
+                    [list_id],
+                )
+                ok += 1
+            if created_new:
+                messages.success(
+                    request,
+                    f'SimpleTexting: created list "{data_import.campaign.name[:41]}" '
+                    f'and added {ok} contact(s).',
+                )
+            else:
+                messages.success(
+                    request,
+                    f'SimpleTexting: reused existing list "{data_import.campaign.name[:41]}" '
+                    f'and added {ok} contact(s).',
+                )
+        except SimpleTextingError as exc:
+            messages.error(request, f'SimpleTexting failed: {exc}')
+        except Exception as exc:
+            messages.error(request, f'SimpleTexting failed: {exc}')
+        return redirect('pipeline:import_detail', import_pk=import_pk)
 
 
 class DownloadDianaQueueView(View):
@@ -768,6 +1469,29 @@ class DownloadVerificationZipView(View):
             content_type='application/zip',
             headers={'Content-Disposition': f'attachment; filename="{fname}"'},
         )
+
+
+class FilterAnalysisRunView(View):
+    """Run OpenAI analysis comparing Outscraper filters to database history."""
+
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(DataImport, pk=import_pk)
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER')
+        if not next_url:
+            next_url = reverse('pipeline:import_detail', kwargs={'import_pk': import_pk})
+
+        if not _openai_configured():
+            messages.error(request, 'OpenAI API key is missing (set OPENAI_API_KEY).')
+            return redirect(next_url)
+
+        try:
+            run_filter_analysis(data_import)
+            messages.success(request, 'AI filter analysis complete — see results below.')
+        except OpenAIAnalysisError as exc:
+            messages.error(request, f'AI analysis failed: {exc}')
+        except Exception as exc:
+            messages.error(request, f'AI analysis failed: {exc}')
+        return redirect(next_url)
 
 
 class CategorySuggestView(View):

@@ -1,0 +1,9 @@
+{% load pipeline_extras %}
+{# Read-only filter summary after AI analysis #}
+<ul class="meta-list mb-0">
+  <li><span class="meta-key">Category</span><span class="meta-val">{{ filter_summary.category }}</span></li>
+  <li><span class="meta-key">Location</span><span class="meta-val">{{ filter_summary.location|location_display }}</span></li>
+  {% if filter_summary.max_results %}
+  <li><span class="meta-key">Max results</span><span class="meta-val">{{ filter_summary.max_results }}</span></li>
+  {% endif %}
+</ul>

@@ -1,0 +1,21 @@
+{% if filter_analysis %}
+  {% include "pipeline/includes/filter_analysis.html" with analysis=filter_analysis %}
+{% endif %}
+
+{% if openai_ready %}
+<form method="post" action="{% url 'pipeline:filter_analysis_run' import_pk=data_import.pk %}" class="d-inline">
+  {% csrf_token %}
+  {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+  <button type="submit" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-stars me-1"></i>
+    {% if filter_analysis %}Re-run AI analysis{% else %}Analyze filters with AI{% endif %}
+  </button>
+</form>
+{% else %}
+<button type="button" class="btn btn-outline-secondary btn-sm"
+        data-api-modal
+        data-api-title="OpenAI"
+        data-api-message="Set OPENAI_API_KEY in your environment to enable AI filter analysis.">
+  <i class="bi bi-stars me-1"></i> Analyze filters with AI
+</button>
+{% endif %}

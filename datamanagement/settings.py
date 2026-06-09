@@ -17,9 +17,20 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # External APIs (set in environment; see PROJECT_PLAN.md)
-MILLIONVERIFIER_API_KEY = os.environ.get('MILLIONVERIFIER_API_KEY', '')
 OUTSCRAPER_API_KEY = os.environ.get('OUTSCRAPER_API_KEY', '')
-PHONE_VALIDATION_API_KEY = os.environ.get('PHONE_VALIDATION_API_KEY', '')
+MILLIONVERIFIER_API_KEY = os.environ.get('MILLIONVERIFIER_API_KEY', '9i4IvMUPdO734qa1grFy4mHMk')
+SMARTLEAD_API_KEY = os.environ.get('SMARTLEAD_API_KEY', '3ffabf9a-654d-4991-8b9f-ed6ad3064f5d_1v018ee')
+PHONE_VALIDATION_API_KEY = os.environ.get('PHONE_VALIDATION_API_KEY', '1020178-CB0F68E0')
+SIMPLETEXTING_API_KEY = os.environ.get('SIMPLETEXTING_API_KEY', '1e064ea54037ed1ca448c9d57d712a38')
+XVERIFY_DOMAIN = os.environ.get('XVERIFY_DOMAIN', 'https://0e3c-103-79-19-235.ngrok-free.app')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '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')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
+
+# Testing / safety switches.
+# Default behavior (when DEBUG=True): cap verification uploads to 5 rows unless
+# you override via env var. Set to 0 to disable the cap (NOT recommended).
+# _mv_limit_default = '5' if DEBUG else '0'
+MILLIONVERIFIER_UPLOAD_ROW_LIMIT = int(os.environ.get('MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 5) or 0)
 
 
 # Quick-start development settings - unsuitable for production
@@ -31,7 +42,21 @@ SECRET_KEY = 'django-insecure-87nntoay#+j^!ygc(nwmjw7(d@h2%rm^iwep#9(ohofonmd8j^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+# Required for POST/forms when using ngrok or another HTTPS tunnel (Django 4+ CSRF origin check).
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'https://*.ngrok-free.app',
+    'https://*.ngrok.io',
+    'https://*.ngrok.app',
+]
+_extra_csrf = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if _extra_csrf:
+    CSRF_TRUSTED_ORIGINS.extend(
+        o.strip() for o in _extra_csrf.split(',') if o.strip()
+    )
 
 
 # Application definition

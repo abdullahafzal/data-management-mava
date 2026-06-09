@@ -185,6 +185,76 @@ class VerificationJob(models.Model):
         return f'Verification — {self.cleaned_dataset}'
 
 
+class PhoneVerificationJob(models.Model):
+    """XVerify phone validation results for one cleaned import."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        PROCESSING = 'processing', 'Processing'
+        COMPLETED = 'completed', 'Completed'
+        FAILED = 'failed', 'Failed'
+
+    cleaned_dataset = models.OneToOneField(
+        CleanedDataset, on_delete=models.CASCADE, related_name='phone_verification_job'
+    )
+    results_file = models.FileField(
+        upload_to='phone_verification/%Y/%m/', blank=True, null=True
+    )
+    total_count = models.PositiveIntegerField(default=0)
+    valid_count = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f'Phone verification — {self.cleaned_dataset}'
+
+
+class FilterAnalysis(models.Model):
+    """OpenAI analysis of Outscraper filter overlap vs database history."""
+
+    class Recommendation(models.TextChoices):
+        REUSE = 'reuse_existing', 'Reuse existing data'
+        SCRAPE = 'scrape_again', 'Scrape again'
+        REVIEW = 'needs_review', 'Needs review'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        COMPLETED = 'completed', 'Completed'
+        FAILED = 'failed', 'Failed'
+
+    data_import = models.ForeignKey(
+        DataImport, on_delete=models.CASCADE, related_name='filter_analyses'
+    )
+    match_type = models.CharField(max_length=16, blank=True)
+    recommendation = models.CharField(
+        max_length=32, choices=Recommendation.choices, blank=True
+    )
+    headline = models.CharField(max_length=255, blank=True)
+    summary = models.TextField(blank=True)
+    reasoning = models.JSONField(default=list, blank=True)
+    warnings = models.JSONField(default=list, blank=True)
+    suggested_reuse_import_id = models.PositiveIntegerField(null=True, blank=True)
+    confidence = models.CharField(max_length=16, blank=True)
+    context_snapshot = models.JSONField(default=dict, blank=True)
+    model_name = models.CharField(max_length=64, blank=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'filter analyses'
+
+    def __str__(self):
+        return f'Filter analysis — import {self.data_import_id}'
+
+
 class VerificationExport(models.Model):
     """One file per MillionVerifier result category (good, risky, unknown, etc.)."""
 

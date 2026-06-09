@@ -8,7 +8,8 @@ import pandas as pd
 SUPPORTED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 PREVIEW_CELL_MAX_LEN = 120
 # Cap only for extremely large files (browser performance). 0 = no cap (show all).
-PREVIEW_ROW_CAP = 0
+# Default preview cap for UI performance.
+PREVIEW_ROW_CAP = 10
 
 
 def _read_dataframe(file_path: str | Path) -> pd.DataFrame:
