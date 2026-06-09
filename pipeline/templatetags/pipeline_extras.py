@@ -1,6 +1,6 @@
 from django import template
 
-from pipeline.services.locations import display_location
+from ..services.locations import display_location
 
 register = template.Library()
 

@@ -52,16 +52,15 @@ from .services.xverify_api import XVerifyError, verify_phone
 from .services.xverify_results import build_results_csv, good_phones_from_csv_bytes, is_valid_status
 from .services.filter_context import build_analysis_context, build_analysis_context_from_filters
 from .services.openai_analysis import OpenAIAnalysisError, analyze_filter_context
-from .services import (
-    build_cleaned_csv,
-    build_diana_handoff_csv,
+from .services.cleaner import build_cleaned_csv
+from .services.diana import build_diana_handoff_csv
+from .services.filters import (
     build_filter_fingerprint,
     find_matching_imports,
     parse_extra_tags,
-    parse_upload,
-    preview_upload,
-    split_verification_results,
 )
+from .services.importer import parse_upload, preview_upload
+from .services.millionverifier import split_verification_results
 from .services.advanced_params import pack_advanced_params
 SUGGESTED_COLUMNS = [
     'name',
