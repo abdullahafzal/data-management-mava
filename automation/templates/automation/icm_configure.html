@@ -1,0 +1,141 @@
+{% extends "pipeline/base.html" %}
+{% block title %}ICM Step 3 — Configure{% endblock %}
+{% block extra_css %}
+<style>
+  #icm-full-name { display: block; }
+  #icm-split-name { display: none; }
+</style>
+{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'automation:dashboard' %}">Automation</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'automation:icm_run' %}">Upload</a></li>
+    <li class="breadcrumb-item active">Configure</li>
+  </ol>
+</nav>
+
+<header class="page-header mb-4">
+  <h1>ICM Step 3 — Map columns</h1>
+  <p class="lead mb-1">File: <strong>{{ run.input_file.name|default:"—" }}</strong></p>
+  <p class="small text-muted mb-0">{{ run.input_columns|length }} columns detected — map them to ICM search fields (First Name, Last Name, M.I., City, State).</p>
+</header>
+
+<div class="alert alert-info alert-app small mb-4">
+  Corporate owners are skipped automatically. All phones, emails, locations, and report URLs
+  scraped from Instant Checkmate are saved to the master workbook.
+  <code>icm_verified</code> is a quality flag — contact data is saved whenever ICM returns it.
+</div>
+
+<div class="card-app mb-4">
+  <div class="card-body">
+    <form method="post" id="icm-configure-form">
+      {% csrf_token %}
+
+      <fieldset class="mb-4">
+        <legend class="fw-semibold fs-6 mb-3">Name columns</legend>
+        {% for radio in form.people_name_mode %}
+        <div class="form-check mb-2">
+          {{ radio.tag }}
+          <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+        </div>
+        {% endfor %}
+        <div class="form-text mt-2">Full name mode splits values like <code>John A Smith</code> into first / middle / last for ICM.</div>
+      </fieldset>
+
+      <div id="icm-full-name" class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}*</label>
+          {{ form.full_name }}
+          <div class="form-text">Maps to ICM <strong>First Name</strong> + <strong>Last Name</strong> (auto-split).</div>
+          {% for e in form.full_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div id="icm-split-name" class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}*</label>
+          {{ form.first_name }}
+          {% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.middle_name.id_for_label }}">{{ form.middle_name.label }}</label>
+          {{ form.middle_name }}
+          <div class="form-text">ICM field: M.I. (or Name)</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}*</label>
+          {{ form.last_name }}
+          {% for e in form.last_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <h2 class="h6 fw-semibold mb-3">Location</h2>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.city.id_for_label }}">{{ form.city.label }}*</label>
+          {{ form.city }}
+          <div class="form-text">ICM <strong>City</strong></div>
+          {% for e in form.city.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.state.id_for_label }}">{{ form.state.label }}*</label>
+          {{ form.state }}
+          <div class="form-text">ICM <strong>State</strong> dropdown</div>
+          {% for e in form.state.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+          {{ form.address }}
+          <div class="form-text">Used if city is empty</div>
+        </div>
+      </div>
+
+      <h2 class="h6 fw-semibold mb-3">Run options</h2>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.batch_limit.id_for_label }}">{{ form.batch_limit.label }}</label>
+          {{ form.batch_limit }}
+          <div class="form-text">{{ form.batch_limit.help_text }}</div>
+          {% for e in form.batch_limit.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.pause_between.id_for_label }}">{{ form.pause_between.label }}</label>
+          {{ form.pause_between }}
+        </div>
+      </div>
+
+      <div class="form-check mb-4">
+        {{ form.force_rebuild_master }}
+        <label class="form-check-label" for="{{ form.force_rebuild_master.id_for_label }}">{{ form.force_rebuild_master.label }}</label>
+        <div class="form-text">{{ form.force_rebuild_master.help_text }}</div>
+      </div>
+
+      <button type="submit" class="btn btn-app-primary">
+        <i class="bi bi-play-fill me-1"></i> Start ICM search
+      </button>
+      <a href="{% url 'automation:dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const fullBlock = document.getElementById('icm-full-name');
+  const splitBlock = document.getElementById('icm-split-name');
+  const nameModeRadios = document.querySelectorAll('input[name="people_name_mode"]');
+
+  function syncNameFields() {
+    const mode = document.querySelector('input[name="people_name_mode"]:checked')?.value || 'full_name';
+    const useFull = mode === 'full_name';
+    fullBlock.style.display = useFull ? '' : 'none';
+    splitBlock.style.display = useFull ? 'none' : '';
+  }
+
+  nameModeRadios.forEach(r => r.addEventListener('change', syncNameFields));
+  syncNameFields();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "pipeline/base.html" %}
+{% block title %}NY Registry — Step 1{% endblock %}
+{% block content %}
+<header class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <h1>NY State registry</h1>
+    <p class="lead mb-0">Step 1 — weekly upload, diff vs last baseline, AI summary.</p>
+  </div>
+  <a href="{% url 'registry:upload' %}" class="btn btn-app-primary">
+    <i class="bi bi-cloud-upload me-1"></i> Upload weekly export
+  </a>
+</header>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card-app">
+      <div class="card-app-header"><h2>Current baseline</h2></div>
+      <div class="card-body">
+        {% if baseline %}
+        <ul class="meta-list mb-0">
+          <li><span class="meta-key">File</span><span class="meta-val">{{ baseline.original_filename }}</span></li>
+          <li><span class="meta-key">Rows</span><span class="meta-val">{{ baseline.row_count }}</span></li>
+          <li><span class="meta-key">Key column</span><span class="meta-val"><code>{{ baseline.key_column }}</code></span></li>
+          {% if baseline.status_column %}
+          <li><span class="meta-key">Status column</span><span class="meta-val"><code>{{ baseline.status_column }}</code></span></li>
+          {% endif %}
+          <li><span class="meta-key">Approved</span><span class="meta-val">{{ baseline.created_at|date:"M j, Y g:i A" }}</span></li>
+        </ul>
+        {% else %}
+        <p class="text-muted small mb-0">No baseline yet. Upload your first NY export and approve it after review.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card-app">
+      <div class="card-app-header"><h2>How it works</h2></div>
+      <div class="card-body small text-muted">
+        <ol class="mb-0 ps-3">
+          <li class="mb-2">Upload this week’s CSV/XLSX from the NY registry.</li>
+          <li class="mb-2">The app compares it to the <strong>last approved baseline</strong> (Python diff — no AI credits).</li>
+          <li class="mb-2">One small AI call summarizes structure, active vs closed counts, and changes.</li>
+          <li>Approve the upload to make it next week’s baseline.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-app mt-4">
+  <div class="card-app-header"><h2>Weekly diff history</h2></div>
+  <div class="card-body p-0">
+    {% if runs %}
+    <div class="table-responsive">
+      <table class="table table-app mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>File</th>
+            <th>New</th>
+            <th>Updated</th>
+            <th>Removed</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td class="small">{{ run.created_at|date:"M j, Y" }}</td>
+            <td class="small">{{ run.new_snapshot.original_filename|truncatechars:40 }}</td>
+            <td>{{ run.stats.new_count|default:"—" }}</td>
+            <td>{{ run.stats.updated_count|default:"—" }}</td>
+            <td>{{ run.stats.removed_count|default:"—" }}</td>
+            <td>
+              {% if run.status == 'approved' %}
+              <span class="badge bg-success">Approved</span>
+              {% elif run.is_initial_baseline %}
+              <span class="badge bg-secondary">Initial</span>
+              {% else %}
+              <span class="badge bg-warning text-dark">Pending</span>
+              {% endif %}
+            </td>
+            <td><a href="{% url 'registry:diff_detail' pk=run.pk %}" class="btn btn-sm btn-outline-primary">Open</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-muted small">No uploads yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

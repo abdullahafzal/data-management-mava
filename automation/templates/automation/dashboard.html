@@ -1,0 +1,65 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Automation{% endblock %}
+{% block content %}
+<header class="page-header d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+  <div>
+    <h1>Automation</h1>
+    <p class="lead mb-0">Spy Dialer lookups and ICM Step 3 — progress tracking, pause/resume, checkpoint saves.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'automation:spy_dialer_run' %}" class="btn btn-app-primary">
+      <i class="bi bi-robot me-1"></i> Spy Dialer
+    </a>
+    <a href="{% url 'automation:icm_run' %}" class="btn btn-outline-primary">
+      <i class="bi bi-person-badge me-1"></i> ICM Step 3
+    </a>
+  </div>
+</header>
+
+<div class="alert alert-info alert-app small mb-4">
+  <strong>Large files (3,400–4,000 rows):</strong> use batch limit and pause/resume to work in chunks overnight.
+</div>
+
+<div class="card-app">
+  <div class="card-app-header"><h2>Recent runs</h2></div>
+  <div class="table-responsive">
+    <table class="table table-app mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Job</th>
+          <th>Status</th>
+          <th>Progress</th>
+          <th>Done / Total</th>
+          <th>Started</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+        <tr>
+          <td>{{ run.pk }}</td>
+          <td>{{ run.get_job_type_display }}{% if run.search_mode %} · {{ run.get_search_mode_display }}{% endif %}</td>
+          <td>
+            <span class="badge {% if run.status == 'completed' %}text-bg-success{% elif run.status == 'failed' %}text-bg-danger{% elif run.status == 'running' %}text-bg-primary{% elif run.status == 'paused' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+              {{ run.get_status_display }}
+            </span>
+          </td>
+          <td>
+            <div class="progress" style="height:6px; min-width:80px;">
+              <div class="progress-bar" style="width:{{ run.progress_percent }}%"></div>
+            </div>
+            <span class="small text-muted">{{ run.progress_percent }}%</span>
+          </td>
+          <td>{{ run.rows_done }} / {{ run.total_rows|default:"?" }}</td>
+          <td class="small text-muted">{{ run.created_at|date:"M j, g:i A" }}</td>
+          <td><a href="{% url 'automation:run_detail' run.pk %}">View</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-muted p-4">No automation runs yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

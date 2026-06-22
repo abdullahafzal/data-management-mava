@@ -1,0 +1,42 @@
+{% extends "pipeline/base.html" %}
+{% block title %}ICM Step 3 — Upload{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'automation:dashboard' %}">Automation</a></li>
+    <li class="breadcrumb-item active">ICM upload</li>
+  </ol>
+</nav>
+
+<header class="page-header mb-4">
+  <h1>ICM Step 3 — Upload</h1>
+  <p class="lead">
+    Upload the NY registry export (CSV/Excel) or an existing master workbook.
+    ICM searches individuals by name + facility city/state and writes verified personal phone/email.
+  </p>
+</header>
+
+<div class="alert alert-warning alert-app small mb-4">
+  <strong>Chrome profile required:</strong> ICM must run in a logged-in Chrome session.
+  Close other Chrome windows or set <code>ICM_USE_REMOTE_DEBUGGING=true</code> in <code>.env</code>.
+  Configure profile via <code>ICM_CHROME_PROFILE_EMAIL</code> or <code>ICM_CHROME_PROFILE_NAME</code>.
+</div>
+
+<div class="card-app">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="form-label fw-semibold" for="{{ form.source_file.id_for_label }}">{{ form.source_file.label }}</label>
+        {{ form.source_file }}
+        <div class="form-text">{{ form.source_file.help_text }}</div>
+        {% for e in form.source_file.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn-app-primary">
+        <i class="bi bi-upload me-1"></i> Continue to column mapping
+      </button>
+      <a href="{% url 'automation:dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

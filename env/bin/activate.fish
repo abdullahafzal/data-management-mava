@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/abubakar/Documents/Projects/abdullah/newFolder/data-management-mava/env
+set -gx VIRTUAL_ENV '/home/abubakar/Documents/Projects/abdullah/data management/data-management-mava/env'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

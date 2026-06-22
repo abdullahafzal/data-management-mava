@@ -1,0 +1,231 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Run #{{ run.pk }}{% endblock %}
+{% block extra_css %}
+<style>
+  .run-log { max-height: 360px; overflow: auto; font-size: 0.8rem; white-space: pre-wrap; }
+  .progress-run { height: 1.25rem; }
+  .stat-tile { text-align: center; padding: 1rem; border-radius: 0.5rem; background: var(--app-surface-2, #f8f9fa); }
+  .stat-tile .num { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+  .stat-tile .lbl { font-size: 0.75rem; color: #6c757d; text-transform: uppercase; letter-spacing: 0.03em; }
+</style>
+{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'automation:dashboard' %}">Automation</a></li>
+    <li class="breadcrumb-item active">Run #{{ run.pk }}</li>
+  </ol>
+</nav>
+
+<header class="page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h1>{% if is_icm %}ICM Step 3{% else %}Spy Dialer{% endif %} run #{{ run.pk }}</h1>
+    <p class="lead mb-0">
+      <span id="status-badge" class="badge text-bg-secondary">{{ run.get_status_display }}</span>
+      · {{ run.get_job_type_display }}
+      {% if run.search_mode %}· {{ run.get_search_mode_display }}{% endif %}
+    </p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if run.output_file %}
+    <a href="{% url 'automation:download_output' run.pk %}" class="btn btn-app-primary">
+      <i class="bi bi-download me-1"></i> Download results
+    </a>
+    {% endif %}
+    <form method="post" action="{% url 'automation:run_control' run.pk 'pause' %}" class="d-inline control-form" data-action="pause">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-warning" id="btn-pause" {% if run.status != 'running' %}disabled{% endif %}>
+        <i class="bi bi-pause-fill"></i> Pause
+      </button>
+    </form>
+    <form method="post" action="{% url 'automation:run_control' run.pk 'resume' %}" class="d-inline control-form" data-action="resume">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-success" id="btn-resume" {% if run.status != 'paused' and run.status != 'stopped' and run.status != 'failed' %}disabled{% endif %}>
+        <i class="bi bi-play-fill"></i> Resume
+      </button>
+    </form>
+    <form method="post" action="{% url 'automation:run_control' run.pk 'stop' %}" class="d-inline control-form" data-action="stop">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger" id="btn-stop" {% if run.status != 'running' and run.status != 'paused' %}disabled{% endif %}>
+        <i class="bi bi-stop-fill"></i> Stop
+      </button>
+    </form>
+  </div>
+</header>
+
+<div class="card-app mb-4">
+  <div class="card-app-header d-flex justify-content-between align-items-center">
+    <h2 class="mb-0">Progress</h2>
+    <span id="progress-label" class="small text-muted">{{ run.progress_percent }}%</span>
+  </div>
+  <div class="card-body">
+    <div class="progress progress-run mb-4">
+      <div id="progress-bar" class="progress-bar progress-bar-striped {% if run.status == 'running' %}progress-bar-animated{% endif %}"
+           role="progressbar" style="width: {{ run.progress_percent }}%"
+           aria-valuenow="{{ run.progress_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-6 col-md">
+        <div class="stat-tile">
+          <div class="num" id="stat-total">{{ run.total_rows }}</div>
+          <div class="lbl">Total</div>
+        </div>
+      </div>
+      <div class="col-6 col-md">
+        <div class="stat-tile">
+          <div class="num text-success" id="stat-done">{{ run.rows_done }}</div>
+          <div class="lbl">Done</div>
+        </div>
+      </div>
+      <div class="col-6 col-md">
+        <div class="stat-tile">
+          <div class="num text-primary" id="stat-remaining">{{ run.rows_remaining }}</div>
+          <div class="lbl">Remaining</div>
+        </div>
+      </div>
+      <div class="col-6 col-md">
+        <div class="stat-tile">
+          <div class="num text-warning" id="stat-skipped">{{ run.rows_skipped }}</div>
+          <div class="lbl">Skipped</div>
+        </div>
+      </div>
+      <div class="col-6 col-md">
+        <div class="stat-tile">
+          <div class="num text-danger" id="stat-failed">{{ run.rows_failed }}</div>
+          <div class="lbl">Failed</div>
+        </div>
+      </div>
+    </div>
+    <p class="small text-muted mb-0 mt-3">
+      Results are saved to disk after <strong>every row</strong>. Pause, stop, or errors will not lose completed rows.
+    </p>
+  </div>
+</div>
+
+{% if run.error_message %}
+<div class="alert alert-danger alert-app small mb-4" id="error-box">{{ run.error_message }}</div>
+{% endif %}
+
+<div class="card-app mb-4">
+  <div class="card-app-header"><h2>Setup</h2></div>
+  <div class="card-body small">
+    <ul class="mb-0">
+      <li>Input: {{ run.input_file.name|default:"—" }}</li>
+      <li>Batch limit: {{ run.params.batch_limit|default:"All pending" }}</li>
+      {% if is_icm %}
+      <li>Rebuild master: {{ run.params.force_rebuild_master|yesno:"Yes,No" }}</li>
+      {% else %}
+      <li>Search mode: {{ run.get_search_mode_display|default:"—" }}</li>
+      {% endif %}
+      <li>Column map: <code>{{ run.column_map }}</code></li>
+      <li>Started: {{ run.started_at|default:"—" }}</li>
+      <li>Finished: {{ run.finished_at|default:"—" }}</li>
+    </ul>
+  </div>
+</div>
+
+{% if run.log %}
+<div class="card-app">
+  <div class="card-app-header"><h2>Log</h2></div>
+  <div class="card-body">
+    <pre class="run-log mb-0 bg-light p-3 rounded" id="run-log">{{ run.log }}</pre>
+  </div>
+</div>
+{% else %}
+<pre class="run-log mb-0 bg-light p-3 rounded d-none" id="run-log"></pre>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const pollEnabled = {{ poll_enabled|yesno:"true,false" }};
+  if (!pollEnabled) return;
+
+  const statusUrl = "{% url 'automation:run_status' run.pk %}";
+  const badge = document.getElementById('status-badge');
+  const bar = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  const btnPause = document.getElementById('btn-pause');
+  const btnResume = document.getElementById('btn-resume');
+  const btnStop = document.getElementById('btn-stop');
+  const errorBox = document.getElementById('error-box');
+  const terminal = ['completed', 'failed', 'stopped', 'cancelled'];
+  let timer = null;
+  let intervalMs = 5000;
+
+  const statusLabels = {
+    configuring: 'Awaiting setup', pending: 'Pending', running: 'Running',
+    paused: 'Paused', completed: 'Completed', failed: 'Failed',
+    stopped: 'Stopped', cancelled: 'Cancelled',
+  };
+  const badgeClass = {
+    completed: 'text-bg-success', failed: 'text-bg-danger', running: 'text-bg-primary',
+    paused: 'text-bg-warning', stopped: 'text-bg-secondary', pending: 'text-bg-secondary',
+  };
+
+  function setStat(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  function syncControls(status) {
+    btnPause.disabled = status !== 'running';
+    btnResume.disabled = !['paused', 'stopped', 'failed'].includes(status);
+    btnStop.disabled = !['running', 'paused'].includes(status);
+  }
+
+  function stopPolling() {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  }
+
+  function schedulePoll() {
+    stopPolling();
+    if (document.hidden) return;
+    timer = setTimeout(poll, intervalMs);
+  }
+
+  function poll() {
+    fetch(statusUrl, { headers: { 'Accept': 'application/json' } })
+      .then(r => r.json())
+      .then(data => {
+        const pct = data.progress_percent || 0;
+        bar.style.width = pct + '%';
+        bar.setAttribute('aria-valuenow', pct);
+        label.textContent = pct + '%';
+        badge.textContent = statusLabels[data.status] || data.status;
+        badge.className = 'badge ' + (badgeClass[data.status] || 'text-bg-secondary');
+        setStat('stat-total', data.total_rows);
+        setStat('stat-done', data.rows_done);
+        setStat('stat-remaining', data.rows_remaining);
+        setStat('stat-skipped', data.rows_skipped);
+        setStat('stat-failed', data.rows_failed);
+        syncControls(data.status);
+        if (data.error_message && errorBox) {
+          errorBox.textContent = data.error_message;
+          errorBox.classList.remove('d-none');
+        }
+        if (data.status === 'running') {
+          bar.classList.add('progress-bar-animated');
+        } else {
+          bar.classList.remove('progress-bar-animated');
+        }
+        if (data.poll && !terminal.includes(data.status)) {
+          schedulePoll();
+        } else {
+          stopPolling();
+        }
+      })
+      .catch(() => schedulePoll());
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && pollEnabled) poll();
+    else stopPolling();
+  });
+
+  poll();
+})();
+</script>
+{% endblock %}

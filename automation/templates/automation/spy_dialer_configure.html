@@ -1,0 +1,165 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Spy Dialer — Configure{% endblock %}
+{% block extra_css %}
+<style>
+  .mode-panel { display: none; }
+  .mode-panel.active { display: block; }
+</style>
+{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'automation:dashboard' %}">Automation</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'automation:spy_dialer_run' %}">Upload</a></li>
+    <li class="breadcrumb-item active">Configure</li>
+  </ol>
+</nav>
+
+<header class="page-header mb-4">
+  <h1>Spy Dialer — Step 2: Map columns</h1>
+  <p class="lead mb-1">File: <strong>{{ run.input_file.name|default:"—" }}</strong></p>
+  <p class="small text-muted mb-0">{{ run.input_columns|length }} columns detected</p>
+</header>
+
+<div class="card-app mb-4">
+  <div class="card-body">
+    <form method="post" id="configure-form">
+      {% csrf_token %}
+
+      <fieldset class="mb-4">
+        <legend class="fw-semibold fs-6 mb-3">Search method</legend>
+        {% for radio in form.search_mode %}
+        <div class="form-check mb-2">
+          {{ radio.tag }}
+          <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+        </div>
+        {% endfor %}
+        <div class="form-text mt-2">
+          <strong>Phone</strong> — Spy Dialer PHONE tab (one phone column).<br>
+          <strong>People</strong> — full name (auto-split) or separate first/middle/last + city + state.<br>
+          <span class="text-warning">Use a source file with one phone per row — not the <code>phone_numbers</code> output column from a prior run (may contain multiple numbers).</span>
+        </div>
+      </fieldset>
+
+      <div id="panel-phone" class="mode-panel mb-4">
+        <h2 class="h6 fw-semibold">Phone column</h2>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+            {{ form.phone }}
+            {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-people" class="mode-panel mb-4">
+        <h2 class="h6 fw-semibold">People columns</h2>
+
+        <fieldset class="mb-3">
+          <legend class="fw-semibold fs-6 mb-2">How are names stored in your file?</legend>
+          {% for radio in form.people_name_mode %}
+          <div class="form-check mb-2">
+            {{ radio.tag }}
+            <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+          </div>
+          {% endfor %}
+          <div class="form-text">Full name mode splits values like <code>John A Smith</code> → First: John, Middle: A, Last: Smith.</div>
+        </fieldset>
+
+        <div id="people-full-name" class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+            {{ form.full_name }}
+            <div class="form-text">e.g. <code>Owner Name</code>, <code>Owner Name </code></div>
+            {% for e in form.full_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div id="people-split-name" class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+            {{ form.first_name }}
+            {% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.middle_name.id_for_label }}">{{ form.middle_name.label }}</label>
+            {{ form.middle_name }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+            {{ form.last_name }}
+            {% for e in form.last_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
+            {{ form.city }}
+            {% for e in form.city.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+            {{ form.address }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.state.id_for_label }}">{{ form.state.label }}</label>
+            {{ form.state }}
+            {% for e in form.state.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.batch_limit.id_for_label }}">{{ form.batch_limit.label }}</label>
+          {{ form.batch_limit }}
+          <div class="form-text">{{ form.batch_limit.help_text }}</div>
+          {% for e in form.batch_limit.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.pause_between.id_for_label }}">{{ form.pause_between.label }}</label>
+          {{ form.pause_between }}
+          <div class="form-text">2s recommended — reduces rate limits on large jobs.</div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-app-primary">
+        <i class="bi bi-play-fill me-1"></i> Start automation
+      </button>
+      <a href="{% url 'automation:dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const phonePanel = document.getElementById('panel-phone');
+  const peoplePanel = document.getElementById('panel-people');
+  const fullNameBlock = document.getElementById('people-full-name');
+  const splitNameBlock = document.getElementById('people-split-name');
+  const modeRadios = document.querySelectorAll('input[name="search_mode"]');
+  const nameModeRadios = document.querySelectorAll('input[name="people_name_mode"]');
+
+  function syncNameFields() {
+    const nameMode = document.querySelector('input[name="people_name_mode"]:checked')?.value || 'full_name';
+    const useFull = nameMode === 'full_name';
+    fullNameBlock.style.display = useFull ? '' : 'none';
+    splitNameBlock.style.display = useFull ? 'none' : '';
+  }
+
+  function syncPanels() {
+    const mode = document.querySelector('input[name="search_mode"]:checked')?.value;
+    phonePanel.classList.toggle('active', mode === 'phone');
+    peoplePanel.classList.toggle('active', mode === 'people');
+    if (mode === 'people') syncNameFields();
+  }
+
+  modeRadios.forEach(r => r.addEventListener('change', syncPanels));
+  nameModeRadios.forEach(r => r.addEventListener('change', syncNameFields));
+  syncPanels();
+})();
+</script>
+{% endblock %}

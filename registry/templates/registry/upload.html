@@ -1,0 +1,71 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Upload NY Registry{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'registry:dashboard' %}">NY Registry</a></li>
+    <li class="breadcrumb-item active">Upload</li>
+  </ol>
+</nav>
+
+<header class="page-header">
+  <h1>Upload weekly export</h1>
+  <p class="lead">CSV or Excel from the NY State business registry.</p>
+</header>
+
+{% if baseline %}
+<div class="alert alert-info alert-app small mb-4">
+  <i class="bi bi-database me-1"></i>
+  Will compare against baseline: <strong>{{ baseline.original_filename }}</strong>
+  ({{ baseline.row_count }} rows, approved {{ baseline.created_at|date:"M j, Y" }}).
+</div>
+{% else %}
+<div class="alert alert-warning alert-app small mb-4">
+  <i class="bi bi-info-circle me-1"></i>
+  First upload — no comparison yet. After review, approve it as the baseline for next week.
+</div>
+{% endif %}
+
+<div class="card-app">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="{{ form.source_file.id_for_label }}">{{ form.source_file.label }}</label>
+        {{ form.source_file }}
+        {% if form.source_file.help_text %}<div class="form-text">{{ form.source_file.help_text }}</div>{% endif %}
+        {% for e in form.source_file.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.key_column.id_for_label }}">{{ form.key_column.label }}</label>
+          {{ form.key_column }}
+          <div class="form-text">{{ form.key_column.help_text }} For NY facility exports, use <strong>Facility #</strong>.</div>
+          {% for e in form.key_column.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.status_column.id_for_label }}">{{ form.status_column.label }}</label>
+          {{ form.status_column }}
+          <div class="form-text">{{ form.status_column.help_text }}</div>
+        </div>
+      </div>
+      <div class="form-check mb-4">
+        {{ form.run_ai_summary }}
+        <label class="form-check-label" for="{{ form.run_ai_summary.id_for_label }}">
+          {{ form.run_ai_summary.label }}
+        </label>
+        {% if not openai_ready %}
+        <div class="form-text text-warning">OPENAI_API_KEY not set — diff still runs without AI.</div>
+        {% endif %}
+      </div>
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger alert-app small">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <button type="submit" class="btn btn-app-primary">
+        <i class="bi bi-play-fill me-1"></i> Run diff &amp; analysis
+      </button>
+      <a href="{% url 'registry:dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

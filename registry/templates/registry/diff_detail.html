@@ -1,0 +1,153 @@
+{% extends "pipeline/base.html" %}
+{% block title %}NY Registry diff #{{ diff_run.pk }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'registry:dashboard' %}">NY Registry</a></li>
+    <li class="breadcrumb-item active">Diff report</li>
+  </ol>
+</nav>
+
+<header class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>Weekly diff report</h1>
+    <p class="lead mb-0">{{ diff_run.new_snapshot.original_filename }} · {{ diff_run.created_at|date:"M j, Y g:i A" }}</p>
+  </div>
+  {% if diff_run.status != 'approved' %}
+  <form method="post" action="{% url 'registry:approve_baseline' pk=diff_run.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-app-primary">
+      <i class="bi bi-check-circle me-1"></i> Approve as baseline
+    </button>
+  </form>
+  {% else %}
+  <span class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i>Approved baseline</span>
+  {% endif %}
+</header>
+
+<div class="stat-row mb-4">
+  <div class="stat-box">
+    <div class="stat-value">{{ stats.new_count|default:0 }}</div>
+    <div class="stat-label">New</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ stats.updated_count|default:0 }}</div>
+    <div class="stat-label">Updated</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ stats.removed_count|default:0 }}</div>
+    <div class="stat-label">Removed</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ stats.unchanged_count|default:0 }}</div>
+    <div class="stat-label">Unchanged</div>
+  </div>
+</div>
+
+{% if stats.is_initial_baseline %}
+<div class="alert alert-info alert-app mb-4">
+  <i class="bi bi-flag me-1"></i> Initial upload — no previous baseline to compare. Approve when ready for next week.
+</div>
+{% endif %}
+
+{% if stats.new_status.active_count is not None %}
+<div class="card-app mb-4">
+  <div class="card-app-header"><h2>Status (new file)</h2></div>
+  <div class="card-body">
+    <div class="row g-3 small">
+      <div class="col-md-4"><strong>Active / open:</strong> {{ stats.new_status.active_count }}</div>
+      <div class="col-md-4"><strong>Closed / inactive:</strong> {{ stats.new_status.closed_count }}</div>
+      <div class="col-md-4"><strong>Column:</strong> <code>{{ stats.new_status.status_column }}</code></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if diff_run.ai_headline or diff_run.ai_summary %}
+<div class="card-app mb-4">
+  <div class="card-app-header d-flex justify-content-between align-items-center">
+    <h2><i class="bi bi-stars me-2 text-primary"></i>AI summary</h2>
+    {% if openai_ready %}
+    <form method="post" action="{% url 'registry:rerun_ai' pk=diff_run.pk %}" class="mb-0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-secondary">Re-run AI</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if diff_run.ai_headline %}<h3 class="h6 fw-semibold">{{ diff_run.ai_headline }}</h3>{% endif %}
+    {% if diff_run.ai_summary %}<p class="small mb-2">{{ diff_run.ai_summary }}</p>{% endif %}
+    {% if diff_run.ai_analysis.change_highlights %}
+    <ul class="small mb-0 ps-3">
+      {% for point in diff_run.ai_analysis.change_highlights %}
+      <li>{{ point }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+{% elif diff_run.ai_error %}
+<div class="alert alert-warning alert-app mb-4 small">{{ diff_run.ai_error }}</div>
+{% endif %}
+
+<div class="card-app mb-4">
+  <div class="card-app-header"><h2>Downloads</h2></div>
+  <div class="card-body d-flex flex-wrap gap-2">
+    {% if stats.new_count %}
+    <a href="{% url 'registry:download_changes' pk=diff_run.pk change_type='new' %}" class="btn btn-sm btn-outline-primary" data-no-loader>New records CSV</a>
+    {% endif %}
+    {% if stats.updated_count %}
+    <a href="{% url 'registry:download_changes' pk=diff_run.pk change_type='updated' %}" class="btn btn-sm btn-outline-primary" data-no-loader>Updated records CSV</a>
+    {% endif %}
+    {% if stats.removed_count %}
+    <a href="{% url 'registry:download_changes' pk=diff_run.pk change_type='removed' %}" class="btn btn-sm btn-outline-primary" data-no-loader>Removed records CSV</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if stats.changed_fields %}
+<div class="card-app mb-4">
+  <div class="card-app-header"><h2>Most changed fields</h2></div>
+  <div class="card-body">
+    <ul class="small mb-0">
+      {% for item in stats.changed_fields %}
+      <li><code>{{ item.field }}</code> — {{ item.count }} row{{ item.count|pluralize }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+{% if stats.samples.updated %}
+<div class="card-app mb-4">
+  <div class="card-app-header"><h2>Sample updates (field changes)</h2></div>
+  <div class="card-body">
+    {% for sample in stats.samples.updated %}
+    <div class="mb-3 pb-3 border-bottom small">
+      <p class="fw-semibold mb-1">Key: <code>{{ sample.registry_key }}</code></p>
+      {% if sample.changes %}
+      <ul class="mb-0 ps-3">
+        {% for ch in sample.changes %}
+        <li><code>{{ ch.field }}</code>: “{{ ch.old|truncatechars:60 }}” → “{{ ch.new|truncatechars:60 }}”</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card-app">
+  <div class="card-app-header"><h2>Technical details</h2></div>
+  <div class="card-body small text-muted">
+    <ul class="mb-0">
+      <li>Key column: <code>{{ stats.key_column }}</code></li>
+      <li>New file rows: {{ stats.new_file_rows }}</li>
+      {% if stats.baseline_file_rows %}<li>Baseline rows: {{ stats.baseline_file_rows }}</li>{% endif %}
+      {% if stats.duplicate_keys_in_new %}<li class="text-warning">Duplicate keys in new file: {{ stats.duplicate_keys_in_new }}</li>{% endif %}
+      <li>AI stored in database — viewing this report does not use API credits.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

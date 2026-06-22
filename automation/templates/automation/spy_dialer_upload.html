@@ -1,0 +1,33 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Spy Dialer — Upload{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'automation:dashboard' %}">Automation</a></li>
+    <li class="breadcrumb-item active">Upload</li>
+  </ol>
+</nav>
+
+<header class="page-header mb-4">
+  <h1>Spy Dialer — Step 1: Upload</h1>
+  <p class="lead">Upload your CSV or Excel (3,400–4,000 rows). Next you’ll map columns and choose phone vs people search.</p>
+</header>
+
+<div class="card-app">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="form-label fw-semibold" for="{{ form.source_file.id_for_label }}">{{ form.source_file.label }}</label>
+        {{ form.source_file }}
+        <div class="form-text">{{ form.source_file.help_text }}</div>
+        {% for e in form.source_file.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn-app-primary">
+        <i class="bi bi-upload me-1"></i> Continue to column mapping
+      </button>
+      <a href="{% url 'automation:dashboard' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

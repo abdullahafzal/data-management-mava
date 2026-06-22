@@ -30,6 +30,30 @@ XVERIFY_DOMAIN = os.environ.get('XVERIFY_DOMAIN', '')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
 
+# Browser automation — headless Chrome by default (set AUTOMATION_HEADLESS_CHROME=false to show window)
+AUTOMATION_HEADLESS_CHROME = os.environ.get('AUTOMATION_HEADLESS_CHROME', 'true').strip().lower() not in (
+    '0', 'false', 'no', 'off',
+)
+
+# ICM Step 3 — visible Chrome + logged-in profile by default
+ICM_HEADLESS = os.environ.get('ICM_HEADLESS', 'false').strip().lower() not in (
+    '0', 'false', 'no', 'off',
+)
+ICM_USE_REMOTE_DEBUGGING = os.environ.get('ICM_USE_REMOTE_DEBUGGING', 'false').strip().lower() in (
+    '1', 'true', 'yes', 'on',
+)
+ICM_REMOTE_DEBUGGING_ADDRESS = os.environ.get('ICM_REMOTE_DEBUGGING_ADDRESS', '127.0.0.1:9222')
+ICM_CHROME_USER_DATA_DIR = os.environ.get('ICM_CHROME_USER_DATA_DIR', '')
+ICM_CHROME_PROFILE_DIRECTORY = os.environ.get('ICM_CHROME_PROFILE_DIRECTORY', '')
+ICM_CHROME_PROFILE_NAME = os.environ.get('ICM_CHROME_PROFILE_NAME', '')
+ICM_CHROME_PROFILE_EMAIL = os.environ.get('ICM_CHROME_PROFILE_EMAIL', '')
+ICM_USE_CHROME_PROFILE = os.environ.get('ICM_USE_CHROME_PROFILE', 'true').strip().lower() not in (
+    '0', 'false', 'no', 'off',
+)
+ICM_LOGIN_EMAIL = os.environ.get('ICM_LOGIN_EMAIL', '')
+ICM_LOGIN_PASSWORD = os.environ.get('ICM_LOGIN_PASSWORD', '')
+ICM_PAUSE_BETWEEN_SEARCHES = float(os.environ.get('ICM_PAUSE_BETWEEN_SEARCHES', '2.0') or 2.0)
+
 # Testing / safety switches.
 # Default behavior (when DEBUG=True): cap verification uploads to 5 rows unless
 # you override via env var. Set to 0 to disable the cap (NOT recommended).
@@ -73,6 +97,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pipeline',
+    'registry',
+    'automation',
 ]
 
 MIDDLEWARE = [

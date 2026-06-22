@@ -1,4 +1,6 @@
-#!/home/abubakar/Documents/Projects/abdullah/newFolder/data-management-mava/env/bin/python3
+#!/bin/sh
+'''exec' "/home/abubakar/Documents/Projects/abdullah/data management/data-management-mava/env/bin/python3" "$0" "$@"
+' '''
 # -*- coding: utf-8 -*-
 import re
 import sys
