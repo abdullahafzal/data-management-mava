@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urlencode
 
 from django.db import connection
@@ -5,14 +6,14 @@ from django.db.models import CharField, QuerySet
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast
 
-from pipeline.services.multi_merge import _find_col, _norm_header
+from pipeline.services.multi_merge import _norm_header
 
 from ..models import LeadRecord, LeadWorkspace
 
 # Dummy industry values when the master file has no Industry column.
 DUMMY_INDUSTRY_VALUES = ['Automotive']
 
-# Always shown on every campaign. Matched to file columns by alias.
+# Always shown on every campaign. Matched to file columns by alias / header token.
 REQUIRED_FILTERS = (
     {
         'key': 'industry',
@@ -27,8 +28,7 @@ REQUIRED_FILTERS = (
         'label': 'Sub industry',
         'aliases': (
             'sub industry', 'sub-industry', 'sub_industry', 'sub category',
-            'subcategory', 'business type', 'business_type', 'biz type',
-            'category',
+            'subcategory', 'category',
         ),
     },
     {
@@ -38,13 +38,18 @@ REQUIRED_FILTERS = (
             'facility state', 'state', 'facility_state', 'search_state',
             'src_facility state',
         ),
+        # Also match any header containing the word "state" (e.g. Facility State).
+        'contain_tokens': ('state',),
     },
     {
         'key': 'county',
         'label': 'County',
+        # DMV / dealer sheets use Business Type for this campaign filter.
         'aliases': (
+            'business type', 'businesstype', 'business_type', 'biz type',
             'facility county', 'county', 'facility_county', 'src_facility county',
         ),
+        'contain_tokens': ('county',),
     },
     {
         'key': 'city',
@@ -52,10 +57,74 @@ REQUIRED_FILTERS = (
         'aliases': (
             'facility city', 'city', 'facility_city', 'src_facility city',
         ),
+        # Also match any header containing the word "city".
+        'contain_tokens': ('city',),
     },
 )
 
 REQUIRED_KEYS = frozenset(spec['key'] for spec in REQUIRED_FILTERS)
+
+
+def _alias_keys(alias: str) -> set[str]:
+    """Normalized forms so 'Business Type' matches business_type / businesstype."""
+    n = _norm_header(alias)
+    return {
+        n,
+        n.replace(' ', ''),
+        n.replace(' ', '_'),
+        n.replace('_', ' '),
+        n.replace('-', ' '),
+    }
+
+
+def find_filter_column(
+    columns: list[str],
+    aliases: tuple[str, ...],
+    *,
+    contain_tokens: tuple[str, ...] = (),
+    exclude: set[str] | None = None,
+) -> str | None:
+    """
+    Resolve a permanent filter to a master-file column.
+    1) Exact alias match (space/underscore/collapsed tolerant)
+    2) Header contains a whole-word token (e.g. 'state' in 'Facility State')
+    """
+    exclude = exclude or set()
+    available = [c for c in columns if c and c not in exclude]
+    if not available:
+        return None
+
+    by_key: dict[str, str] = {}
+    for col in available:
+        for key in _alias_keys(col):
+            by_key.setdefault(key, col)
+
+    for alias in aliases:
+        for key in _alias_keys(alias):
+            if key in by_key:
+                return by_key[key]
+
+    for token in contain_tokens:
+        t = _norm_header(token)
+        if not t:
+            continue
+        pat = re.compile(rf'(^| ){re.escape(t)}( |$)')
+        candidates: list[tuple[int, int, str]] = []
+        for col in available:
+            n = _norm_header(col)
+            if not pat.search(n):
+                continue
+            if n == t:
+                score = 0
+            elif n.endswith(f' {t}') or n.startswith(f'{t} '):
+                score = 1
+            else:
+                score = 2
+            candidates.append((score, len(n), col))
+        if candidates:
+            candidates.sort()
+            return candidates[0][2]
+    return None
 
 
 def _filter_by_source(qs: QuerySet, source: str) -> QuerySet:
@@ -91,7 +160,7 @@ def _values_for_column(workspace: LeadWorkspace, column: str, limit: int = 200) 
 
 
 def resolve_required_filters(workspace: LeadWorkspace, params) -> list[dict]:
-    """Always return Industry / Sub industry / County / State for the UI."""
+    """Always return Industry / Sub industry / State / County / City for the UI."""
     columns = list(workspace.columns or [])
     # Prefer exact pinned entries from filter_fields when present.
     pinned_by_key = {
@@ -101,23 +170,44 @@ def resolve_required_filters(workspace: LeadWorkspace, params) -> list[dict]:
     }
 
     result = []
+    used_cols: set[str] = set()
     for spec in REQUIRED_FILTERS:
         key = spec['key']
         pinned = pinned_by_key.get(key)
         data_column = None
         values: list[str] = []
+        contain = tuple(spec.get('contain_tokens') or ())
 
-        if pinned and pinned.get('column'):
-            data_column = pinned['column']
+        pinned_col = (pinned or {}).get('column') or ''
+        # Only trust a pin if that column still matches this filter's aliases.
+        pin_ok = bool(
+            pinned_col
+            and pinned_col not in used_cols
+            and find_filter_column(
+                [pinned_col],
+                spec['aliases'],
+                contain_tokens=contain,
+            ) == pinned_col
+        )
+
+        if pin_ok:
+            data_column = pinned_col
             values = list(pinned.get('values') or [])
         else:
-            data_column = _find_col(columns, spec['aliases'])
+            data_column = find_filter_column(
+                columns,
+                spec['aliases'],
+                contain_tokens=contain,
+                exclude=used_cols,
+            )
             if data_column:
                 values = _values_for_column(workspace, data_column)
 
         if not values and spec.get('dummy_values'):
             values = list(spec['dummy_values'])
-            data_column = data_column  # may still be None → UI-only dummy
+
+        if data_column:
+            used_cols.add(data_column)
 
         selected = (params.get(key) or '').strip()
         result.append({
@@ -144,7 +234,12 @@ def resolve_additional_filters(workspace: LeadWorkspace, params) -> list[dict]:
     # Also exclude columns that match required aliases even if not pinned yet
     columns = list(workspace.columns or [])
     for spec in REQUIRED_FILTERS:
-        col = _find_col(columns, spec['aliases'])
+        col = find_filter_column(
+            columns,
+            spec['aliases'],
+            contain_tokens=tuple(spec.get('contain_tokens') or ()),
+            exclude=required_cols,
+        )
         if col:
             required_cols.add(col)
 

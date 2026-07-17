@@ -65,12 +65,16 @@ MILLIONVERIFIER_UPLOAD_ROW_LIMIT = int(os.environ.get('MILLIONVERIFIER_UPLOAD_RO
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-87nntoay#+j^!ygc(nwmjw7(d@h2%rm^iwep#9(ohofonmd8j^'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-87nntoay#+j^!ygc(nwmjw7(d@h2%rm^iwep#9(ohofonmd8j^',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'true').strip().lower() in ('1', 'true', 'yes', 'on')
 
-ALLOWED_HOSTS = ['*']
+_allowed = os.environ.get('ALLOWED_HOSTS', '*').strip()
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()] or ['*']
 
 # Required for POST/forms when using ngrok or another HTTPS tunnel (Django 4+ CSRF origin check).
 CSRF_TRUSTED_ORIGINS = [
@@ -178,6 +182,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

@@ -7,6 +7,7 @@ app_name = 'dashboard'
 urlpatterns = [
     path('', views.DashboardHomeView.as_view(), name='home'),
     path('<int:pk>/', views.WorkspaceDashboardView.as_view(), name='workspace'),
+    path('<int:pk>/download/', views.WorkspaceDownloadMasterView.as_view(), name='download_master'),
     path('<int:pk>/merge/', views.WorkspaceMergeView.as_view(), name='merge'),
     path('<int:pk>/proceed/', views.WorkspaceProceedView.as_view(), name='proceed'),
     path(

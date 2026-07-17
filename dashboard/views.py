@@ -1,15 +1,17 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from urllib.parse import urlencode
 
 from .forms import CreateWorkspaceForm, MergeSourceForm
 from .models import LeadRecord, LeadSourceFile, LeadWorkspace, LeadWorkspaceAction
+from .services.export import build_master_export_csv
 from .services.filters import (
     apply_filters,
     filter_ui_context,
@@ -137,6 +139,26 @@ class WorkspaceDashboardView(View):
             'process_choices': LeadRecord.ProcessStatus.choices,
             'clear_selection': (request.GET.get('clear_sel') or '') == '1',
         })
+
+
+class WorkspaceDownloadMasterView(View):
+    """Download full master CSV: file columns + Source + all status columns."""
+
+    def get(self, request, pk):
+        workspace = get_object_or_404(LeadWorkspace, pk=pk)
+        if workspace.row_count == 0 and not workspace.records.exists():
+            raise Http404('No records to download for this workspace.')
+
+        csv_bytes = build_master_export_csv(workspace)
+        safe_name = ''.join(
+            ch if ch.isalnum() or ch in ('-', '_') else '_'
+            for ch in (workspace.name or 'workspace')
+        ).strip('_') or 'workspace'
+        filename = f'{safe_name}_master.csv'
+
+        response = HttpResponse(csv_bytes, content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 
 class WorkspaceMergeView(View):

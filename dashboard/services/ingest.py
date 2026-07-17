@@ -17,7 +17,7 @@ from pipeline.services.multi_merge import (
 )
 
 from ..models import LeadRecord, LeadSourceFile, LeadWorkspace
-from .filters import REQUIRED_FILTERS
+from .filters import REQUIRED_FILTERS, find_filter_column
 
 INTERNAL_COLS = frozenset({
     'row_sources', 'match_key_used', '_merge_source', '_merge_row',
@@ -164,7 +164,12 @@ def _build_filter_fields(columns: list[str], row_dicts: list[dict]) -> list[dict
     used: set[str] = set()
 
     for spec in REQUIRED_FILTERS:
-        col = _find_col(columns, spec['aliases'])
+        col = find_filter_column(
+            columns,
+            spec['aliases'],
+            contain_tokens=tuple(spec.get('contain_tokens') or ()),
+            exclude=used,
+        )
         if col:
             values = sorted(v for v in distinct_map.get(col, set()) if v)[:200]
             result.append({

@@ -26,6 +26,21 @@
       <i class="bi bi-check2-circle me-1"></i> Proceed
       <span class="badge text-bg-light text-success ms-1" id="proceed-count">0</span>
     </button>
+    {% if workspace.row_count %}
+    <a href="{% url 'dashboard:download_master' pk=workspace.pk %}"
+       class="btn btn-outline-primary" data-no-loader
+       title="Download master CSV with all columns and statuses">
+      <i class="bi bi-download me-1"></i> Download master
+    </a>
+    {% else %}
+    <button type="button" class="btn btn-outline-primary" disabled title="No records to download yet">
+      <i class="bi bi-download me-1"></i> Download master
+    </button>
+    {% endif %}
+    <button type="button" class="btn btn-outline-secondary" disabled
+            title="Coming in a later phase — auto-route to next verification step">
+      <i class="bi bi-arrow-right-circle me-1"></i> Process next
+    </button>
     <button type="button" class="btn btn-app-primary" data-bs-toggle="modal" data-bs-target="#mergeModal"
             data-kind="{{ source_kinds.OTHER }}" data-title="Upload CSV">
       <i class="bi bi-upload me-1"></i> Upload CSV
