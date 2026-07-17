@@ -87,6 +87,8 @@ class DataImport(models.Model):
     row_count = models.PositiveIntegerField(default=0)
     columns = models.JSONField(default=list)
     selected_columns = models.JSONField(default=list, blank=True)
+    # Multi-file merge: union report (matched / only-in-file / formula)
+    merge_report = models.JSONField(default=dict, blank=True)
     # Outscraper filters (for history + duplicate detection)
     outscraper_category = models.CharField(
         max_length=255, blank=True,
@@ -146,6 +148,29 @@ class DataImport(models.Model):
         from .services.advanced_params import quick_filter_labels
         advanced = self.outscraper_advanced or {}
         return quick_filter_labels(advanced.get('quick_filters') or [])
+
+    @property
+    def source_file_count(self) -> int:
+        return self.source_files.count()
+
+
+class ImportSourceFile(models.Model):
+    """One uploaded source sheet that was merged into a DataImport."""
+
+    data_import = models.ForeignKey(
+        DataImport, on_delete=models.CASCADE, related_name='source_files'
+    )
+    file = models.FileField(upload_to='imports/sources/%Y/%m/')
+    original_filename = models.CharField(max_length=255)
+    sort_order = models.PositiveIntegerField(default=0)
+    row_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        return f'{self.original_filename} → import #{self.data_import_id}'
 
 
 class CleanedDataset(models.Model):

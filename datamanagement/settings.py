@@ -26,6 +26,8 @@ MILLIONVERIFIER_API_KEY = os.environ.get('MILLIONVERIFIER_API_KEY', '')
 SMARTLEAD_API_KEY = os.environ.get('SMARTLEAD_API_KEY', '')
 PHONE_VALIDATION_API_KEY = os.environ.get('PHONE_VALIDATION_API_KEY', '')
 SIMPLETEXTING_API_KEY = os.environ.get('SIMPLETEXTING_API_KEY', '')
+GHL_API_KEY = os.environ.get('GHL_API_KEY', '')
+GHL_LOCATION_ID = os.environ.get('GHL_LOCATION_ID', '')
 XVERIFY_DOMAIN = os.environ.get('XVERIFY_DOMAIN', '')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
@@ -54,10 +56,8 @@ ICM_LOGIN_EMAIL = os.environ.get('ICM_LOGIN_EMAIL', '')
 ICM_LOGIN_PASSWORD = os.environ.get('ICM_LOGIN_PASSWORD', '')
 ICM_PAUSE_BETWEEN_SEARCHES = float(os.environ.get('ICM_PAUSE_BETWEEN_SEARCHES', '2.0') or 2.0)
 
-# Testing / safety switches.
-# Default behavior (when DEBUG=True): cap verification uploads to 5 rows unless
-# you override via env var. Set to 0 to disable the cap (NOT recommended).
-# _mv_limit_default = '5' if DEBUG else '0'
+# Caps emails sent to MillionVerifier API only — never truncates cleaned exports.
+# Default 5 for safe testing; set MILLIONVERIFIER_UPLOAD_ROW_LIMIT=0 for full runs.
 MILLIONVERIFIER_UPLOAD_ROW_LIMIT = int(os.environ.get('MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 5) or 0)
 
 
@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     'pipeline',
     'registry',
     'automation',
+    'dashboard',
 ]
 
 MIDDLEWARE = [

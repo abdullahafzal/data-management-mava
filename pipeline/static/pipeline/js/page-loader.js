@@ -50,14 +50,19 @@
     if (form.tagName !== 'FORM') return;
     if (form.dataset.noLoader !== undefined) return;
     if (form.target === '_blank') return;
-    showLoader();
+    // Defer so confirm()/preventDefault handlers can cancel without stuck loader
+    window.setTimeout(() => {
+      if (event.defaultPrevented) {
+        hideLoader();
+        return;
+      }
+      showLoader();
+    }, 0);
   });
 
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-      hideLoader();
-      scrollToHash();
-    }
+  window.addEventListener('pageshow', () => {
+    hideLoader();
+    scrollToHash();
   });
 
   window.addEventListener('load', () => {

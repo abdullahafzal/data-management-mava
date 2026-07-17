@@ -133,18 +133,21 @@
           </div>
 
           <p class="text-muted small mb-3">
-            Upload the CSV or Excel export from Outscraper for the filters you just analyzed.
+            Upload one or more CSV/Excel files (DMV, Outscraper, BeenVerified, etc.).
+            <strong>First file</strong> is the match base. Matching rows are combined;
+            unmatched rows from every file are kept. Conflicting values are kept with source tags —
+            nothing is deleted.
           </p>
           <div class="mb-3">
-            <label class="form-label fw-semibold" for="{{ upload_form.original_file.id_for_label }}">
-              <span class="text-danger">*</span> {{ upload_form.original_file.label }}
+            <label class="form-label fw-semibold" for="{{ upload_form.source_files.id_for_label }}">
+              <span class="text-danger">*</span> {{ upload_form.source_files.label }}
             </label>
-            {{ upload_form.original_file }}
-            {% if upload_form.original_file.help_text %}
-            <div class="form-text">{{ upload_form.original_file.help_text }}</div>
+            {{ upload_form.source_files }}
+            {% if upload_form.source_files.help_text %}
+            <div class="form-text">{{ upload_form.source_files.help_text }}</div>
             {% endif %}
-            {% if upload_form.original_file.errors %}
-            <div class="text-danger small">{{ upload_form.original_file.errors.0 }}</div>
+            {% if upload_form.source_files.errors %}
+            <div class="text-danger small">{{ upload_form.source_files.errors.0 }}</div>
             {% endif %}
           </div>
           {{ upload_form.confirm_duplicate }}

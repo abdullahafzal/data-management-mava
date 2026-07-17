@@ -168,15 +168,39 @@ class OutscraperFiltersForm(forms.Form):
         return normalize_service_ids(list(raw))
 
 
-class DataImportUploadForm(OutscraperFiltersForm):
-    """Upload Outscraper export with full filter tags (manual and automatic)."""
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
-    original_file = forms.FileField(
-        label='Outscraper file',
-        widget=forms.FileInput(attrs={
+
+class MultipleFileField(forms.FileField):
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            if not data:
+                raise forms.ValidationError(self.error_messages['required'], code='required')
+            return [single_file_clean(d, initial) for d in data]
+        if data in self.empty_values:
+            if self.required:
+                raise forms.ValidationError(self.error_messages['required'], code='required')
+            return []
+        return [single_file_clean(data, initial)]
+
+
+class DataImportUploadForm(OutscraperFiltersForm):
+    """Upload one or more CSV/Excel files; multiple files are union-merged."""
+
+    source_files = MultipleFileField(
+        label='Data files (one or more)',
+        widget=MultipleFileInput(attrs={
             'class': 'form-control',
             'accept': '.csv,.xlsx,.xls',
+            'multiple': True,
         }),
+        help_text=(
+            'Upload DMV / Outscraper / BeenVerified / etc. First file is the match base. '
+            'Matching rows are merged; unmatched rows from every file are kept '
+            '(200 + 300 with 0 matches → 500). Conflicts keep both values with source tags.'
+        ),
     )
     confirm_duplicate = forms.BooleanField(
         required=False,
@@ -186,10 +210,48 @@ class DataImportUploadForm(OutscraperFiltersForm):
     def __init__(self, *args, automatic=False, **kwargs):
         super().__init__(*args, **kwargs)
         if automatic:
-            self.fields['original_file'].label = 'Outscraper CSV or Excel file'
-            self.fields['original_file'].help_text = (
-                'Export file from Outscraper after running with the filters above.'
-            )
+            self.fields['source_files'].label = 'CSV / Excel file(s)'
+
+    def clean_source_files(self):
+        files = self.cleaned_data.get('source_files') or []
+        if not files:
+            raise forms.ValidationError('Upload at least one CSV or Excel file.')
+        for f in files:
+            name = (getattr(f, 'name', '') or '').lower()
+            if not (name.endswith('.csv') or name.endswith('.xlsx') or name.endswith('.xls')):
+                raise forms.ValidationError(
+                    f'Unsupported file type: {getattr(f, "name", "unknown")}. Use .csv, .xlsx, or .xls.'
+                )
+        return files
+
+
+class AddMoreSourceFilesForm(forms.Form):
+    """Append CSV/Excel files to an existing import and re-run union merge."""
+
+    source_files = MultipleFileField(
+        label='Add more data files',
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'accept': '.csv,.xlsx,.xls',
+            'multiple': True,
+        }),
+        help_text=(
+            'Files are merged into this import (first uploaded file stays the match base). '
+            'Matches enrich rows; unmatched rows are added. Conflicts keep both values.'
+        ),
+    )
+
+    def clean_source_files(self):
+        files = self.cleaned_data.get('source_files') or []
+        if not files:
+            raise forms.ValidationError('Choose at least one CSV or Excel file.')
+        for f in files:
+            name = (getattr(f, 'name', '') or '').lower()
+            if not (name.endswith('.csv') or name.endswith('.xlsx') or name.endswith('.xls')):
+                raise forms.ValidationError(
+                    f'Unsupported file type: {getattr(f, "name", "unknown")}. Use .csv, .xlsx, or .xls.'
+                )
+        return files
 
 
 class ColumnSelectionForm(forms.Form):

@@ -59,6 +59,11 @@ urlpatterns = [
         name='import_detail',
     ),
     path(
+        'imports/<int:import_pk>/add-sources/',
+        views.ImportAddSourcesView.as_view(),
+        name='import_add_sources',
+    ),
+    path(
         'imports/<int:import_pk>/download/cleaned/',
         views.DownloadCleanedView.as_view(),
         name='download_cleaned',
@@ -92,6 +97,11 @@ urlpatterns = [
         'imports/<int:import_pk>/simpletexting/push-phones/',
         views.SimpleTextingPushPhonesView.as_view(),
         name='simpletexting_push_phones',
+    ),
+    path(
+        'imports/<int:import_pk>/gohighlevel/push-contacts/',
+        views.GoHighLevelPushContactsView.as_view(),
+        name='gohighlevel_push_contacts',
     ),
     path(
         'imports/<int:import_pk>/analyze-filters/',

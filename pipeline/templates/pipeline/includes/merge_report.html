@@ -1,0 +1,135 @@
+<section id="merge-report" class="card-app pipeline-section mb-3">
+  <div class="card-app-header">
+    <h2><span class="pipeline-step-num">0</span> Multi-file merge</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">
+      {% if data_import.merge_report.formula %}
+        {{ data_import.merge_report.formula }}
+      {% else %}
+        {{ data_import.row_count }} rows from {{ data_import.original_filename|default:"uploaded file" }}.
+      {% endif %}
+      Match order: Facility # → Street+City(+Zip) → Business name+City.
+      Conflicts keep both values with source-tagged columns. Nothing is removed.
+    </p>
+
+    {% if data_import.merge_report.files %}
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-3">
+        <div class="stat-tile">
+          <div class="num">{{ data_import.merge_report.files|length }}</div>
+          <div class="lbl">Source files</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-tile">
+          <div class="num text-success">{{ data_import.merge_report.matched_pairs|default:0 }}</div>
+          <div class="lbl">Matched</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-tile">
+          <div class="num text-primary">{{ data_import.merge_report.union_rows|default:data_import.row_count }}</div>
+          <div class="lbl">Union rows</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-tile">
+          <div class="num text-warning">{{ data_import.merge_report.only_in_secondary_approx|default:0 }}</div>
+          <div class="lbl">New from other files</div>
+        </div>
+      </div>
+    </div>
+    <div class="table-responsive mb-3">
+      <table class="table table-app table-sm mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>File</th>
+            <th>Rows</th>
+            <th>Columns</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in data_import.merge_report.files %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td class="small">{{ f.label }}</td>
+            <td>{{ f.rows }}</td>
+            <td>{{ f.columns }}</td>
+            <td class="small text-muted">{% if forloop.first %}Match base{% else %}Merged in{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if data_import.merge_report.match_by_level %}
+    <p class="small text-muted mb-3">
+      Matched by:
+      Facility # {{ data_import.merge_report.match_by_level.facility|default:0 }},
+      Address {{ data_import.merge_report.match_by_level.address|default:0 }},
+      Name+city {{ data_import.merge_report.match_by_level.name_city|default:0 }}.
+    </p>
+    {% endif %}
+    {% elif data_import.source_files.all %}
+    <div class="table-responsive mb-3">
+      <table class="table table-app table-sm mb-0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>File</th>
+            <th>Rows</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for src in data_import.source_files.all %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td class="small">{{ src.original_filename }}</td>
+            <td>{{ src.row_count }}</td>
+            <td class="small text-muted">{% if forloop.first %}Match base{% else %}Merged in{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="small text-muted mb-3">
+      Current dataset: <strong>{{ data_import.original_filename|default:"Original file" }}</strong>
+      ({{ data_import.row_count }} rows). Add another file below to union-merge.
+    </p>
+    {% endif %}
+
+    {% if add_sources_form %}
+    <div class="border-top pt-3 mt-1">
+      <h3 class="h6 mb-2">Add more data</h3>
+      <p class="small text-muted mb-2">
+        Upload another DMV / Outscraper / BeenVerified / etc. file.
+        It merges into this import — the first file stays the match base.
+      </p>
+      <form method="post"
+            action="{% url 'pipeline:import_add_sources' import_pk=data_import.pk %}"
+            enctype="multipart/form-data"
+            class="row g-2 align-items-end">
+        {% csrf_token %}
+        <div class="col-md-8">
+          <label class="form-label small fw-semibold" for="{{ add_sources_form.source_files.id_for_label }}">
+            {{ add_sources_form.source_files.label }}
+          </label>
+          {{ add_sources_form.source_files }}
+          {% if add_sources_form.source_files.help_text %}
+          <div class="form-text">{{ add_sources_form.source_files.help_text }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-app-primary w-100">
+            <i class="bi bi-plus-lg me-1"></i> Merge into this import
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>

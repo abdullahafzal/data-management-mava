@@ -1,6 +1,7 @@
 import io
 import re
 import zipfile
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
@@ -16,6 +17,7 @@ import pandas as pd
 
 from .constants import resolve_automatic_columns
 from .forms import (
+    AddMoreSourceFilesForm,
     CampaignForm,
     ColumnSelectionForm,
     DataImportUploadForm,
@@ -27,11 +29,13 @@ from .models import (
     CleanedDataset,
     DataImport,
     FilterAnalysis,
+    ImportSourceFile,
     PhoneVerificationJob,
     VerificationExport,
     VerificationJob,
 )
 from .services.automatic import AutomaticPipelineError, run_automatic_pipeline
+from .services.multi_merge import merge_files
 from .services.enrichment_services import normalize_service_ids
 from .services.locations import REGIONS_BY_COUNTRY, parse_location
 from .services.suggestions import (
@@ -57,6 +61,12 @@ from .services.simpletexting_api import (
 from .services.simpletexting_contacts import (
     collect_simpletexting_contacts,
     resolve_simpletexting_source,
+)
+from .services.ghl_api import GoHighLevelError, upsert_contact
+from .services.ghl_contacts import (
+    collect_ghl_contacts,
+    describe_ghl_sources,
+    ghl_push_ready,
 )
 from .services.xverify_api import XVerifyError, verify_phone
 from .services.xverify_results import build_results_csv, good_phones_from_csv_bytes, is_valid_status
@@ -179,6 +189,10 @@ def _smartlead_configured() -> bool:
 
 def _simpletexting_configured() -> bool:
     return bool(getattr(settings, 'SIMPLETEXTING_API_KEY', ''))
+
+
+def _ghl_configured() -> bool:
+    return bool(getattr(settings, 'GHL_API_KEY', '')) and bool(getattr(settings, 'GHL_LOCATION_ID', ''))
 
 
 def _simpletexting_list_status(campaign_name: str) -> dict | None:
@@ -462,6 +476,173 @@ def _process_upload_file(data_import: DataImport, uploaded_file=None) -> None:
     data_import.file_format = parsed['file_format']
     data_import.status = DataImport.Status.PARSED
     data_import.save()
+
+
+def _save_and_merge_source_files(data_import: DataImport, uploaded_files: list) -> dict:
+    """
+    Persist each uploaded source file, union-merge into one CSV on original_file.
+    First file is the match base. Returns merge_report dict.
+    """
+    if not uploaded_files:
+        raise ValueError('At least one source file is required.')
+
+    # Ensure parent row exists so FK + file storage work.
+    if not data_import.pk:
+        data_import.save()
+
+    labeled_paths: list[tuple[str, str]] = []
+    for i, uploaded in enumerate(uploaded_files):
+        name = uploaded.name or f'source_{i + 1}.csv'
+        src = ImportSourceFile(
+            data_import=data_import,
+            original_filename=name,
+            sort_order=i,
+        )
+        src.file.save(name, uploaded, save=False)
+        src.save()
+        try:
+            parsed = parse_upload(src.file.path)
+            src.row_count = parsed['row_count']
+            src.save(update_fields=['row_count'])
+        except Exception:
+            pass
+        labeled_paths.append((name, src.file.path))
+
+    result = merge_files(labeled_paths)
+    merged_name = f'merged_{data_import.pk}.csv'
+    if len(uploaded_files) == 1:
+        merged_name = uploaded_files[0].name or merged_name
+        data_import.original_filename = uploaded_files[0].name or merged_name
+    else:
+        names = ' + '.join(f.name for f in uploaded_files[:3])
+        if len(uploaded_files) > 3:
+            names += f' (+{len(uploaded_files) - 3} more)'
+        data_import.original_filename = f'Merged ({len(uploaded_files)} files): {names}'[:255]
+
+    data_import.original_file.save(merged_name, ContentFile(result.csv_bytes), save=False)
+    data_import.merge_report = result.report
+    data_import.file_format = 'csv'
+    data_import.save()
+    return result.report
+
+
+def _ensure_import_has_source_files(data_import: DataImport) -> None:
+    """Seed ImportSourceFile from original_file when older imports have none."""
+    if data_import.source_files.exists():
+        return
+    if not data_import.original_file:
+        raise ValueError('This import has no file to extend.')
+    name = data_import.original_filename or Path(data_import.original_file.name).name or 'original.csv'
+    src = ImportSourceFile(
+        data_import=data_import,
+        original_filename=name,
+        sort_order=0,
+        row_count=data_import.row_count or 0,
+    )
+    with data_import.original_file.open('rb') as fh:
+        src.file.save(name, ContentFile(fh.read()), save=True)
+
+
+def _rematch_all_source_files(data_import: DataImport) -> dict:
+    """Rebuild original_file + merge_report from all ImportSourceFile rows."""
+    sources = list(data_import.source_files.order_by('sort_order', 'pk'))
+    if not sources:
+        raise ValueError('No source files to merge.')
+    labeled_paths = [(s.original_filename, s.file.path) for s in sources]
+    result = merge_files(labeled_paths)
+
+    n = len(sources)
+    if n == 1:
+        data_import.original_filename = sources[0].original_filename
+        merged_name = sources[0].original_filename or f'merged_{data_import.pk}.csv'
+    else:
+        names = ' + '.join(s.original_filename for s in sources[:3])
+        if n > 3:
+            names += f' (+{n - 3} more)'
+        data_import.original_filename = f'Merged ({n} files): {names}'[:255]
+        merged_name = f'merged_{data_import.pk}.csv'
+
+    data_import.original_file.save(merged_name, ContentFile(result.csv_bytes), save=False)
+    data_import.merge_report = result.report
+    data_import.file_format = 'csv'
+    data_import.save()
+    _process_upload_file(data_import)
+    return result.report
+
+
+def _append_source_files_and_rematch(data_import: DataImport, uploaded_files: list) -> dict:
+    """Append uploads to this import and re-run union merge. First file stays base."""
+    if not uploaded_files:
+        raise ValueError('At least one file is required.')
+    _ensure_import_has_source_files(data_import)
+    max_order = (
+        data_import.source_files.order_by('-sort_order')
+        .values_list('sort_order', flat=True)
+        .first()
+    )
+    next_order = 0 if max_order is None else max_order + 1
+
+    for i, uploaded in enumerate(uploaded_files):
+        name = uploaded.name or f'source_{next_order + i + 1}.csv'
+        src = ImportSourceFile(
+            data_import=data_import,
+            original_filename=name,
+            sort_order=next_order + i,
+        )
+        src.file.save(name, uploaded, save=False)
+        src.save()
+        try:
+            parsed = parse_upload(src.file.path)
+            src.row_count = parsed['row_count']
+            src.save(update_fields=['row_count'])
+        except Exception:
+            pass
+
+    return _rematch_all_source_files(data_import)
+
+
+def _refresh_cleaned_after_merge(data_import: DataImport) -> int | None:
+    """Rebuild cleaned export after source merge; returns new row count or None."""
+    if data_import.campaign.is_automatic:
+        row_count, _, _ = run_automatic_pipeline(data_import)
+        return row_count
+
+    columns = data_import.columns or []
+    selected = [
+        c for c in (data_import.selected_columns or [])
+        if c in columns and not str(c).startswith('Unnamed')
+    ]
+    if not selected:
+        # Prefer real identity / contact columns when prior selection was junk-only.
+        preferred = [
+            'Facility #', 'Facility Name', 'Facility Name Overflow',
+            'Facility Street', 'Facility City', 'Facility State',
+            'Facility Zip Code', 'Facility County', 'Owner Name',
+            'phone', 'email_1', 'email_2', 'email_3',
+            'name', 'full_address', 'street', 'city', 'state', 'postal_code',
+        ]
+        selected = [c for c in preferred if c in columns]
+        selected += [
+            c for c in columns
+            if c not in selected and not str(c).startswith('Unnamed')
+            and c not in ('row_sources', 'match_key_used')
+        ][:30]
+    if not selected:
+        return None
+
+    csv_bytes, row_count = build_cleaned_csv(
+        data_import.original_file.path,
+        selected,
+    )
+    data_import.selected_columns = selected
+    data_import.save(update_fields=['selected_columns'])
+    cleaned, _ = CleanedDataset.objects.update_or_create(
+        data_import=data_import,
+        defaults={'row_count': row_count},
+    )
+    filename = f'cleaned_{data_import.campaign_id}_{data_import.pk}.csv'
+    cleaned.file.save(filename, ContentFile(csv_bytes), save=True)
+    return row_count
 
 
 def _render_campaign_detail_page(
@@ -771,15 +952,25 @@ class DataImportUploadView(View):
             )
         )
         confirm = form.cleaned_data.get('confirm_duplicate')
+        uploaded_files = form.cleaned_data['source_files']
 
         data_import = DataImport(campaign=campaign)
-        data_import.original_file = form.cleaned_data['original_file']
-        data_import.original_filename = form.cleaned_data['original_file'].name
         _apply_filter_fields(data_import, form, system_tags=['automatic'])
+        data_import.status = DataImport.Status.UPLOADED
+        data_import.save()
+
+        try:
+            merge_report = _save_and_merge_source_files(data_import, uploaded_files)
+        except Exception as exc:
+            data_import.status = DataImport.Status.FAILED
+            data_import.error_message = str(exc)
+            data_import.save()
+            messages.error(request, f'Failed to merge files: {exc}')
+            return redirect('pipeline:campaign_detail', pk=campaign.pk)
 
         if duplicates and not confirm:
             data_import.status = DataImport.Status.AWAITING_CONFIRM
-            data_import.save()
+            data_import.save(update_fields=['status'])
             return render(request, 'pipeline/upload_confirm_duplicate.html', _duplicate_confirm_context(
                 campaign, data_import, duplicates, is_automatic=True, request=request,
             ))
@@ -788,19 +979,20 @@ class DataImportUploadView(View):
         _remember_filter_suggestions(form)
         _clear_campaign_filter_analysis(request, campaign.pk)
         return self._finish_automatic_import(
-            request, campaign, data_import, form.cleaned_data['original_file'],
+            request, campaign, data_import,
             duplicates=duplicates, confirmed=bool(confirm),
+            merge_report=merge_report,
         )
 
     def _finish_automatic_import(
-        self, request, campaign, data_import, uploaded_file,
-        *, duplicates, confirmed,
+        self, request, campaign, data_import,
+        *, duplicates, confirmed, merge_report=None,
     ):
         data_import.status = DataImport.Status.UPLOADED
-        data_import.save()
+        data_import.save(update_fields=['status'])
 
         try:
-            _process_upload_file(data_import, uploaded_file)
+            _process_upload_file(data_import)
             row_count, used_cols, missing_cols = run_automatic_pipeline(data_import)
         except AutomaticPipelineError as exc:
             data_import.status = DataImport.Status.FAILED
@@ -826,6 +1018,13 @@ class DataImportUploadView(View):
                 request,
                 f'Automatic processing complete: {row_count} rows, '
                 f'{len(used_cols)} columns kept.',
+            )
+        report = merge_report or data_import.merge_report or {}
+        if report.get('files') and len(report['files']) > 1:
+            messages.info(
+                request,
+                f"Multi-file merge: {report.get('formula', '')} "
+                f"(matched {report.get('matched_pairs', 0)} row(s)).",
             )
         if missing_cols:
             messages.info(
@@ -855,27 +1054,35 @@ class DataImportUploadView(View):
         )
         duplicates = find_matching_imports(fingerprint)
         confirm = form.cleaned_data.get('confirm_duplicate')
+        uploaded_files = form.cleaned_data['source_files']
 
         data_import = DataImport(campaign=campaign)
-        data_import.original_file = form.cleaned_data['original_file']
-        data_import.original_filename = form.cleaned_data['original_file'].name
         _apply_filter_fields(data_import, form)
+        data_import.status = DataImport.Status.UPLOADED
+        data_import.save()
+
+        try:
+            merge_report = _save_and_merge_source_files(data_import, uploaded_files)
+        except Exception as exc:
+            data_import.status = DataImport.Status.FAILED
+            data_import.error_message = str(exc)
+            data_import.save()
+            messages.error(request, f'Failed to merge files: {exc}')
+            return redirect('pipeline:campaign_detail', pk=campaign.pk)
 
         if duplicates and not confirm:
             data_import.status = DataImport.Status.AWAITING_CONFIRM
-            data_import.save()
+            data_import.save(update_fields=['status'])
             return render(request, 'pipeline/upload_confirm_duplicate.html', _duplicate_confirm_context(
                 campaign, data_import, duplicates, is_automatic=False, request=request,
             ))
 
-        data_import.status = DataImport.Status.UPLOADED
-        data_import.save()
         _sync_campaign_filters(campaign, form)
         _remember_filter_suggestions(form)
         _clear_campaign_filter_analysis(request, campaign.pk)
 
         try:
-            _process_upload_file(data_import, form.cleaned_data['original_file'])
+            _process_upload_file(data_import)
             if duplicates and confirm:
                 messages.warning(
                     request,
@@ -886,6 +1093,12 @@ class DataImportUploadView(View):
                 messages.success(
                     request,
                     f'Imported {data_import.row_count} rows. Filters saved to history.',
+                )
+            if merge_report.get('files') and len(merge_report['files']) > 1:
+                messages.info(
+                    request,
+                    f"Multi-file merge: {merge_report.get('formula', '')} "
+                    f"(matched {merge_report.get('matched_pairs', 0)} row(s)).",
                 )
         except Exception as exc:
             data_import.status = DataImport.Status.FAILED
@@ -906,9 +1119,12 @@ class DataImportConfirmView(View):
 
         if action == 'cancel':
             campaign_id = data_import.campaign_id
-            data_import.original_file.delete(save=False)
+            for src in data_import.source_files.all():
+                src.file.delete(save=False)
+            if data_import.original_file:
+                data_import.original_file.delete(save=False)
             data_import.delete()
-            messages.info(request, 'Upload cancelled. No new Outscraper export was added.')
+            messages.info(request, 'Upload cancelled. No new export was added.')
             return redirect('pipeline:campaign_detail', pk=campaign_id)
 
         if action != 'confirm':
@@ -994,7 +1210,45 @@ class AutomaticResultsView(View):
             'preview_error': preview_error,
             'cleaned_preview': cleaned_preview,
             'cleaned_preview_error': cleaned_preview_error,
+            'add_sources_form': AddMoreSourceFilesForm(),
         })
+
+
+class ImportAddSourcesView(View):
+    """Append more CSV/Excel files to an existing import and re-merge."""
+
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related('campaign'),
+            pk=import_pk,
+        )
+        form = AddMoreSourceFilesForm(request.POST, request.FILES)
+        if not form.is_valid():
+            for err in form.errors.get('source_files', form.errors.get('__all__', [])):
+                messages.error(request, err)
+            return _redirect_import_page(data_import, section='merge-report')
+
+        uploaded = form.cleaned_data['source_files']
+        try:
+            report = _append_source_files_and_rematch(data_import, uploaded)
+            cleaned_rows = _refresh_cleaned_after_merge(data_import)
+        except Exception as exc:
+            messages.error(request, f'Could not merge new files: {exc}')
+            return _redirect_import_page(data_import, section='merge-report')
+
+        formula = (report or {}).get('formula', '')
+        matched = (report or {}).get('matched_pairs', 0)
+        msg = (
+            f'Added {len(uploaded)} file(s). '
+            f'{formula or f"Now {data_import.row_count} rows"} '
+            f'(matched {matched}).'
+        )
+        if cleaned_rows is not None:
+            msg += f' Cleaned export refreshed ({cleaned_rows} rows). Re-run MillionVerifier if needed.'
+        else:
+            msg += ' Recreate cleaned export (step 2) to include new columns/rows.'
+        messages.success(request, msg)
+        return _redirect_import_page(data_import, section='merge-report')
 
 
 class SelectColumnsView(View):
@@ -1039,7 +1293,6 @@ class SelectColumnsView(View):
             csv_bytes, row_count = build_cleaned_csv(
                 data_import.original_file.path,
                 selected,
-                row_limit=getattr(settings, 'MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 0),
             )
         except Exception as exc:
             messages.error(request, f'Cleaning failed: {exc}')
@@ -1065,6 +1318,7 @@ class ImportDetailView(View):
                 'cleaned_dataset__phone_verification_job',
             ).prefetch_related(
                 'cleaned_dataset__verification_job__exports',
+                'source_files',
             ),
             pk=import_pk,
         )
@@ -1100,10 +1354,21 @@ class ImportDetailView(View):
                 xverify_configured=_xverify_configured(),
             ),
             'simpletexting_list': _simpletexting_list_status(data_import.campaign.name),
+            'ghl_ready': _ghl_configured(),
+            'ghl_push_ready': ghl_push_ready(
+                data_import,
+                xverify_configured=_xverify_configured(),
+                ghl_configured=_ghl_configured(),
+            ),
+            'ghl_source_hint': describe_ghl_sources(
+                data_import,
+                xverify_configured=_xverify_configured(),
+            ),
             'preview': preview,
             'preview_error': preview_error,
             'cleaned_preview': cleaned_preview,
             'cleaned_preview_error': cleaned_preview_error,
+            'add_sources_form': AddMoreSourceFilesForm(),
         })
 
 
@@ -1439,6 +1704,84 @@ class SimpleTextingPushPhonesView(View):
         except Exception as exc:
             messages.error(request, f'SimpleTexting failed: {exc}')
         return _redirect_import_page(data_import, section='simpletexting')
+
+
+class GoHighLevelPushContactsView(View):
+    def post(self, request, import_pk):
+        data_import = get_object_or_404(
+            DataImport.objects.select_related(
+                'campaign',
+                'cleaned_dataset__phone_verification_job',
+                'cleaned_dataset__verification_job',
+            ).prefetch_related('cleaned_dataset__verification_job__exports'),
+            pk=import_pk,
+        )
+        if not _ghl_configured():
+            messages.error(
+                request,
+                'GoHighLevel is not configured. Set GHL_API_KEY and GHL_LOCATION_ID in .env.',
+            )
+            return _redirect_import_page(data_import, section='gohighlevel')
+
+        xverify_on = _xverify_configured()
+        if not ghl_push_ready(data_import, xverify_configured=xverify_on, ghl_configured=True):
+            messages.error(request, 'Run MillionVerifier (step 3) or XVerify (step 4) first.')
+            return _redirect_import_page(data_import, section='gohighlevel')
+
+        contacts = collect_ghl_contacts(data_import, xverify_configured=xverify_on)
+        if not contacts:
+            messages.error(
+                request,
+                'No contacts with email or phone found. Complete verification steps first.',
+            )
+            return _redirect_import_page(data_import, section='gohighlevel')
+
+        tag = (data_import.campaign.name or 'import')[:40].strip() or 'import'
+        ok = 0
+        errors = 0
+        first_error = ''
+        try:
+            for contact in contacts[:400]:
+                try:
+                    upsert_contact(
+                        settings.GHL_API_KEY,
+                        settings.GHL_LOCATION_ID,
+                        email=contact.get('email', ''),
+                        phone=contact.get('phone', ''),
+                        first_name=contact.get('first_name', ''),
+                        last_name=contact.get('last_name', ''),
+                        company_name=contact.get('company', ''),
+                        tags=[tag],
+                    )
+                    ok += 1
+                except GoHighLevelError as exc:
+                    errors += 1
+                    if not first_error:
+                        first_error = str(exc)
+
+            if ok == 0:
+                detail = f' First error: {first_error}' if first_error else ''
+                messages.error(
+                    request,
+                    f'GoHighLevel push failed for all {len(contacts[:400])} contact(s).'
+                    f'{detail} '
+                    f'Common cause: invalid emails in MillionVerifier good export — '
+                    f'contacts with valid phones only are still pushed after this fix; retry.',
+                )
+            else:
+                note = f' Upserted with tag "{tag}".'
+                if errors:
+                    note += f' {errors} contact(s) failed.'
+                messages.success(
+                    request,
+                    f'GoHighLevel: pushed {ok} contact(s) to your sub-account.{note} '
+                    f'Find them in GHL → Contacts (filter by tag).',
+                )
+        except GoHighLevelError as exc:
+            messages.error(request, f'GoHighLevel failed: {exc}')
+        except Exception as exc:
+            messages.error(request, f'GoHighLevel failed: {exc}')
+        return _redirect_import_page(data_import, section='gohighlevel')
 
 
 class DownloadDianaQueueView(View):

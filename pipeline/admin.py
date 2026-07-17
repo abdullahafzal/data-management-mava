@@ -5,6 +5,7 @@ from .models import (
     CleanedDataset,
     DataImport,
     FilterAnalysis,
+    ImportSourceFile,
     SavedCategory,
     SavedLocationSuggestion,
     VerificationExport,
@@ -40,6 +41,12 @@ class VerificationExportInline(admin.TabularInline):
     readonly_fields = ['category', 'row_count', 'file']
 
 
+class ImportSourceFileInline(admin.TabularInline):
+    model = ImportSourceFile
+    extra = 0
+    readonly_fields = ['original_filename', 'sort_order', 'row_count', 'file']
+
+
 @admin.register(DataImport)
 class DataImportAdmin(admin.ModelAdmin):
     list_display = [
@@ -52,9 +59,10 @@ class DataImportAdmin(admin.ModelAdmin):
         'original_filename', 'filter_fingerprint',
     ]
     readonly_fields = [
-        'columns', 'selected_columns', 'row_count',
+        'columns', 'selected_columns', 'row_count', 'merge_report',
         'filter_fingerprint', 'outscraper_services', 'outscraper_advanced', 'extra_tags',
     ]
+    inlines = [ImportSourceFileInline]
 
 
 @admin.register(VerificationJob)

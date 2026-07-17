@@ -1,0 +1,161 @@
+.ldb-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.ldb-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.ldb-sub {
+  color: var(--text-muted);
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+}
+.ldb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ldb-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 768px) {
+  .ldb-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.ldb-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  box-shadow: var(--shadow-sm);
+}
+.ldb-metric-val {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.ldb-metric-val.accent { color: var(--primary); }
+.ldb-metric-val.success { color: var(--success); }
+.ldb-metric-val.warn { color: var(--warning); }
+.ldb-metric-lbl {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  font-weight: 600;
+}
+
+.ldb-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #334155;
+}
+.ldb-chip-source { background: #dcfce7; color: #166534; }
+
+.ldb-table td, .ldb-table th { vertical-align: middle; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.ldb-table th { font-size: 0.72rem; text-transform: none; letter-spacing: 0; }
+.ldb-table .sticky-col {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.ldb-table thead .sticky-col { z-index: 2; }
+.ldb-table .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.ldb-src {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin: 0.1rem 0.15rem 0.1rem 0;
+  background: #e2e8f0;
+  color: #334155;
+}
+.ldb-src-beenverified { background: #dcfce7; color: #166534; }
+.ldb-src-outscraper { background: #ffedd5; color: #9a3412; }
+.ldb-src-dmv { background: #e2e8f0; color: #475569; }
+.ldb-src-merged { background: #ede9fe; color: #5b21b6; }
+
+.ldb-status {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ldb-status-researched { background: #ecfdf5; color: #047857; }
+.ldb-status-needs_owner { background: #fff7ed; color: #c2410c; }
+.ldb-status-in_campaign { background: #eff6ff; color: #1d4ed8; }
+.ldb-status-duplicate { background: #f1f5f9; color: #64748b; }
+
+.ldb-process {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ldb-process-pending { background: #fff7ed; color: #c2410c; }
+.ldb-process-proceeded { background: #ecfdf5; color: #047857; }
+
+.ldb-table th.small {
+  font-size: 0.72rem;
+  max-width: 6.5rem;
+  white-space: normal;
+  line-height: 1.15;
+  vertical-align: bottom;
+}
+
+.ldb-check-col {
+  width: 2.25rem;
+  text-align: center;
+  vertical-align: middle !important;
+}
+.ldb-selection .badge { font-weight: 600; }
+
+.ldb-action {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.ldb-action-proceed { background: #ecfdf5; color: #047857; }
+.ldb-action-undo_proceed { background: #fff7ed; color: #c2410c; }
+.ldb-action-merge { background: #eff6ff; color: #1d4ed8; }
+
+.ldb-filter-group-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ldb-filter-group + .ldb-filter-group {
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}

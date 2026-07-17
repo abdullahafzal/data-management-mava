@@ -36,6 +36,8 @@
 
 <div class="pipeline-page col-lg-10 col-xl-9 mx-auto">
 
+  {% include "pipeline/includes/merge_report.html" %}
+
   {# 1. Outscraper filters #}
   <section class="card-app pipeline-section mb-3">
     <div class="card-app-header">
@@ -314,6 +316,50 @@
                 data-api-title="SimpleTexting"
                 data-api-message="SimpleTexting API is missing.">
           <i class="bi bi-cloud-arrow-up me-1"></i> Push to SimpleTexting
+        </button>
+        {% endif %}
+      {% else %}
+      <p class="text-muted small mb-0">Create a cleaned export first (step 2).</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# 4c. GoHighLevel #}
+  <section id="gohighlevel" class="card-app pipeline-section mb-3">
+    <div class="card-app-header">
+      <h2><span class="pipeline-step-num">4c</span> GoHighLevel</h2>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-info alert-app py-2 small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Upserts contacts into your <strong>GoHighLevel sub-account</strong> (CRM → Contacts).
+        Uses verified emails and phones — same data as Smartlead + SimpleTexting, merged into one push.
+        Each import is tagged with the campaign name so you can filter in GHL.
+      </div>
+
+      {% if ghl_source_hint %}
+      <p class="text-muted small mb-3">{{ ghl_source_hint }}</p>
+      {% endif %}
+
+      {% if data_import.cleaned_dataset %}
+        {% if ghl_ready and ghl_push_ready %}
+        <form method="post" action="{% url 'pipeline:gohighlevel_push_contacts' import_pk=data_import.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Push contacts to GoHighLevel
+          </button>
+        </form>
+        {% elif ghl_ready %}
+        <button type="button" class="btn btn-outline-primary" disabled>
+          <i class="bi bi-cloud-arrow-up me-1"></i> Push contacts to GoHighLevel
+        </button>
+        <p class="small text-muted mt-2 mb-0">Complete MillionVerifier or XVerify first.</p>
+        {% else %}
+        <button type="button" class="btn btn-outline-primary"
+                data-api-modal
+                data-api-title="GoHighLevel"
+                data-api-message="Set GHL_API_KEY and GHL_LOCATION_ID in .env (Private Integration token + sub-account location ID).">
+          <i class="bi bi-cloud-arrow-up me-1"></i> Push contacts to GoHighLevel
         </button>
         {% endif %}
       {% else %}

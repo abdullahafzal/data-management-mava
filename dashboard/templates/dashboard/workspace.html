@@ -1,0 +1,653 @@
+{% extends "pipeline/base.html" %}
+{% load static dashboard_extras %}
+{% block title %}{{ workspace.name }} — Lead DB{% endblock %}
+{% block extra_css %}
+<link href="{% static 'dashboard/css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<header class="ldb-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Lead databases</a></li>
+        <li class="breadcrumb-item active">{{ workspace.name }}</li>
+      </ol>
+    </nav>
+    <h1 class="ldb-title">{{ workspace.name }}</h1>
+    <p class="ldb-sub">
+      Master file columns · Source + destination status ·
+      {{ table_columns|length }} data column{{ table_columns|length|pluralize }}
+    </p>
+  </div>
+  <div class="ldb-actions">
+    <button type="button" class="btn btn-success" id="proceed-btn" disabled
+            title="Set destination status for selected rows"
+            data-bs-toggle="modal" data-bs-target="#proceedModal">
+      <i class="bi bi-check2-circle me-1"></i> Proceed
+      <span class="badge text-bg-light text-success ms-1" id="proceed-count">0</span>
+    </button>
+    <button type="button" class="btn btn-app-primary" data-bs-toggle="modal" data-bs-target="#mergeModal"
+            data-kind="{{ source_kinds.OTHER }}" data-title="Upload CSV">
+      <i class="bi bi-upload me-1"></i> Upload CSV
+    </button>
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#mergeModal"
+            data-kind="{{ source_kinds.OUTSCRAPER }}" data-title="Add Outscraper data">
+      <i class="bi bi-geo-alt me-1"></i> Outscraper
+    </button>
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#mergeModal"
+            data-kind="{{ source_kinds.BEENVERIFIED }}" data-title="Add BeenVerified data">
+      <i class="bi bi-person-vcard me-1"></i> BeenVerified
+    </button>
+    <button type="button" class="btn btn-outline-secondary" disabled title="Coming soon">
+      <i class="bi bi-cloud-download me-1"></i> Sync DMV API
+    </button>
+    <a href="#action-history" class="btn btn-outline-secondary">
+      <i class="bi bi-clock-history me-1"></i> Action history
+      {% if action_count %}<span class="badge text-bg-secondary ms-1">{{ action_count }}</span>{% endif %}
+    </a>
+  </div>
+</header>
+
+<div class="ldb-metrics">
+  <div class="ldb-metric">
+    <div class="ldb-metric-val">{{ metrics.master_records|floatformat:0 }}</div>
+    <div class="ldb-metric-lbl">Master records</div>
+  </div>
+  <div class="ldb-metric">
+    <div class="ldb-metric-val accent">{{ metrics.working_set|floatformat:0 }}</div>
+    <div class="ldb-metric-lbl">Working set (filtered)</div>
+  </div>
+  <div class="ldb-metric">
+    <div class="ldb-metric-val warn">{{ metrics.pending|floatformat:0 }}</div>
+    <div class="ldb-metric-lbl">Pending</div>
+  </div>
+  <div class="ldb-metric">
+    <div class="ldb-metric-val success">{{ metrics.proceeded|floatformat:0 }}</div>
+    <div class="ldb-metric-lbl">Proceeded</div>
+  </div>
+</div>
+
+<section class="card-app ldb-filters mb-3">
+  <form method="get" class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4 col-lg-3">
+        <label class="form-label small text-muted mb-1">Search</label>
+        <input type="search" name="q" value="{{ filters.q }}" class="form-control"
+               placeholder="Search any column…">
+      </div>
+    </div>
+
+    <div class="ldb-filter-group mt-3">
+      <div class="ldb-filter-group-title">Campaign filters</div>
+      <p class="small text-muted mb-2">Required on every campaign — Industry, Sub industry, State, County, City.</p>
+      <div class="row g-2 align-items-end">
+        {% for ff in required_filters %}
+        <div class="col-6 col-md-3 col-lg-2">
+          <label class="form-label small text-muted mb-1 text-truncate d-block" title="{{ ff.label }}{% if ff.data_column %} ← {{ ff.data_column }}{% endif %}">
+            {{ ff.label }}
+            {% if ff.missing_column %}<span class="text-warning" title="Column not in master file">*</span>{% endif %}
+          </label>
+          <select name="{{ ff.param }}" class="form-select">
+            <option value="">All</option>
+            {% for v in ff.values %}
+            <option value="{{ v }}" {% if ff.selected == v %}selected{% endif %}>{{ v }}</option>
+            {% empty %}
+            <option value="" disabled>No values in file</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+        <div class="col-6 col-md-3 col-lg-2">
+          <label class="form-label small text-muted mb-1">Process</label>
+          <select name="process" class="form-select">
+            <option value="">All</option>
+            {% for val, label in choices.process_statuses %}
+            <option value="{{ val }}" {% if filters.process == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    {% if additional_filters %}
+    <div class="ldb-filter-group mt-3">
+      <div class="ldb-filter-group-title">Additional filters</div>
+      <p class="small text-muted mb-2">Extra columns detected in this campaign’s data.</p>
+      <div class="row g-2 align-items-end">
+        {% for ff in additional_filters %}
+        <div class="col-6 col-md-3 col-lg-2">
+          <label class="form-label small text-muted mb-1 text-truncate d-block" title="{{ ff.column }}">
+            {{ ff.label }}
+          </label>
+          <select name="{{ ff.param }}" class="form-select">
+            <option value="">All</option>
+            {% for v in ff.values %}
+            <option value="{{ v }}" {% if ff.selected == v %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
+      <button type="submit" class="btn btn-sm btn-app-primary">Apply filters</button>
+      <a href="{% url 'dashboard:workspace' pk=workspace.pk %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+      {% if active_filters %}
+      <span class="text-muted small ms-1">Active:</span>
+      {% for f in active_filters %}
+      <span class="ldb-chip {% if f.key == 'source' %}ldb-chip-source{% endif %}">
+        {{ f.label }}: {{ f.value }}
+      </span>
+      {% endfor %}
+      {% endif %}
+      <span class="text-muted small ms-2">Quick process:</span>
+      <a class="ldb-chip text-decoration-none" href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}process=pending">Pending</a>
+      <a class="ldb-chip ldb-chip-source text-decoration-none" href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}process=proceeded">Proceeded</a>
+      {% if choices.sources %}
+      <span class="text-muted small ms-2">Quick source:</span>
+      {% for s in choices.sources %}
+      <a class="ldb-chip ldb-chip-source text-decoration-none"
+         href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}source={{ s|urlencode }}">{{ s }}</a>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="card-app ldb-selection mb-3">
+  <div class="card-body d-flex flex-wrap gap-2 align-items-center py-3">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-select-page">
+      Select this page
+    </button>
+    <button type="button" class="btn btn-sm btn-app-primary" id="btn-select-filtered"
+            data-url="{{ selection_ids_url }}?{{ filter_qs }}"
+            data-working-set="{{ working_set_count }}">
+      Select filtered results
+      {% if working_set_count %}<span class="badge text-bg-light text-primary ms-1">{{ working_set_count }}</span>{% endif %}
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-select-filtered-pending"
+            data-url="{{ selection_ids_url }}?{{ filter_qs }}{% if filter_qs %}&{% endif %}pending_only=1"
+            title="Only pending rows in the filtered set">
+      Select filtered pending
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-clear-selection">Clear selection</button>
+    <span class="small text-muted ms-1" id="selection-label">No rows selected</span>
+  </div>
+</section>
+
+<section id="action-history" class="card-app mb-3">
+  <div class="card-app-header d-flex justify-content-between align-items-center">
+    <h2 class="h6 mb-0"><i class="bi bi-clock-history me-1"></i> Action history</h2>
+    <span class="small text-muted">{{ action_count }} action{{ action_count|pluralize }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if action_history %}
+    <div class="table-responsive">
+      <table class="table table-app table-sm mb-0">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Action</th>
+            <th>Details</th>
+            <th>Rows</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for act in action_history %}
+          <tr class="{% if act.undone_at %}opacity-50{% endif %}">
+            <td class="small text-muted text-nowrap">{{ act.created_at|timesince }} ago</td>
+            <td>
+              <span class="ldb-action ldb-action-{{ act.action_type }}">{{ act.get_action_type_display }}</span>
+              {% if act.undone_at %}<span class="small text-muted ms-1">(undone)</span>{% endif %}
+            </td>
+            <td class="small">{{ act.summary }}</td>
+            <td>{{ act.record_count|floatformat:0 }}</td>
+            <td class="text-end">
+              {% if act.can_undo %}
+              <form method="post" action="{% url 'dashboard:undo_action' pk=workspace.pk action_pk=act.pk %}" class="d-inline undo-form"
+                    data-confirm="Undo this Proceed? Destination statuses will be restored.">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-warning">Undo</button>
+              </form>
+              {% elif act.action_type == 'undo_proceed' %}
+              <span class="small text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0 p-3">No actions yet. Proceed and merge uploads will show up here, and you can undo Proceed.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card-app">
+  <div class="table-responsive">
+    <table class="table table-app ldb-table mb-0" id="leads-table">
+      <thead>
+        <tr>
+          <th class="ldb-check-col">
+            <input type="checkbox" id="check-page" title="Select / clear this page" aria-label="Select page">
+          </th>
+          <th class="sticky-col">ID</th>
+          {% for col in table_columns %}
+          <th title="{{ col }}">{{ col }}</th>
+          {% endfor %}
+          <th>Source</th>
+          {% for key, field, label in destinations %}
+          <th class="small">{{ label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr data-record-id="{{ r.id }}" data-process="{{ r.process_status }}">
+          <td class="ldb-check-col">
+            <input type="checkbox" class="row-check" value="{{ r.id }}"
+                   data-pending="{% if r.process_status == 'pending' %}1{% else %}0{% endif %}"
+                   aria-label="Select {{ r.public_id }}">
+          </td>
+          <td class="mono sticky-col">{{ r.public_id }}</td>
+          {% for col in table_columns %}
+          <td class="{% if forloop.first %}fw-semibold{% endif %} small">{{ r|lead_cell:col }}</td>
+          {% endfor %}
+          <td>
+            {% for s in r.sources %}
+            <span class="ldb-src ldb-src-{{ s|slugify }}">{{ s }}</span>
+            {% empty %}
+            <span class="text-muted">—</span>
+            {% endfor %}
+            {% if r.sources|length > 1 %}<span class="ldb-src ldb-src-merged">Merged</span>{% endif %}
+          </td>
+          <td>
+            <span class="ldb-process ldb-process-{{ r.status_millionverifier }}">{{ r.get_status_millionverifier_display }}</span>
+          </td>
+          <td>
+            <span class="ldb-process ldb-process-{{ r.status_email_verifier }}">{{ r.get_status_email_verifier_display }}</span>
+          </td>
+          <td>
+            <span class="ldb-process ldb-process-{{ r.status_xverify }}">{{ r.get_status_xverify_display }}</span>
+          </td>
+          <td>
+            <span class="ldb-process ldb-process-{{ r.status_smartlead }}">{{ r.get_status_smartlead_display }}</span>
+          </td>
+          <td>
+            <span class="ldb-process ldb-process-{{ r.status_simpletexting }}">{{ r.get_status_simpletexting_display }}</span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="{{ colspan }}" class="text-muted text-center py-5">No records match these filters.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <p class="small text-muted mb-0">
+      Showing {{ page.start_index }}–{{ page.end_index }} of {{ page.paginator.count|floatformat:0 }}
+      · Select rows or filtered results, then Proceed (pending only).
+    </p>
+    {% if page.has_other_pages %}
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        {% if page.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{{ filter_qs }}{% if filter_qs %}&{% endif %}page={{ page.previous_page_number }}">Prev</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">{{ page.number }} / {{ page.paginator.num_pages }}</span></li>
+        {% if page.has_next %}
+        <li class="page-item"><a class="page-link" href="?{{ filter_qs }}{% if filter_qs %}&{% endif %}page={{ page.next_page_number }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</section>
+
+{% if workspace.last_merge_report.formula %}
+<p class="small text-muted mt-3 mb-0">Last merge: {{ workspace.last_merge_report.formula }}</p>
+{% endif %}
+
+<div class="modal fade" id="proceedModal" tabindex="-1" aria-labelledby="proceedModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{% url 'dashboard:proceed' pk=workspace.pk %}" id="proceed-form" class="modal-content">
+      {% csrf_token %}
+      <input type="hidden" name="selection_mode" id="selection_mode" value="">
+      <div id="selected-ids-container"></div>
+      <input type="hidden" name="q" value="{{ filters.q }}">
+      <input type="hidden" name="industry" value="{{ filters.industry }}">
+      <input type="hidden" name="sub_industry" value="{{ filters.sub_industry }}">
+      <input type="hidden" name="state" value="{{ filters.state }}">
+      <input type="hidden" name="county" value="{{ filters.county }}">
+      <input type="hidden" name="city" value="{{ filters.city }}">
+      <input type="hidden" name="process" value="{{ filters.process }}">
+      <input type="hidden" name="source" value="{{ filters.source }}">
+      <input type="hidden" name="status" value="{{ filters.status }}">
+      {% for ff in additional_filters %}
+      <input type="hidden" name="{{ ff.param }}" value="{{ ff.selected }}">
+      {% endfor %}
+      <div class="modal-header">
+        <h5 class="modal-title" id="proceedModalLabel">Set destination status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">
+          Applying to <strong id="proceed-modal-count">0</strong> selected row(s).
+          Leave as <em>Keep current</em> to leave that destination unchanged.
+        </p>
+        {% for key, field, label in destinations %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="status_{{ key }}">{{ label }}</label>
+          <select name="status_{{ key }}" id="status_{{ key }}" class="form-select">
+            <option value="keep" selected>Keep current</option>
+            {% for val, lab in process_choices %}
+            <option value="{{ val }}">{{ lab }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-success" id="proceed-confirm-btn">Apply status</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="mergeModal" tabindex="-1" aria-labelledby="mergeModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="post" action="{% url 'dashboard:merge' pk=workspace.pk %}" enctype="multipart/form-data" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title" id="mergeModalLabel">Merge into master</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">
+          Matching rows (Facility # → address → name+city) are enriched; unmatched rows are added.
+          New columns from the file are added to the table automatically.
+        </p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="id_source_kind">Source</label>
+          <select name="source_kind" id="id_source_kind" class="form-select">
+            {% for val, label in merge_form.fields.source_kind.choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-0">
+          <label class="form-label fw-semibold" for="id_source_file">File</label>
+          <input type="file" name="source_file" id="id_source_file" class="form-control" accept=".csv,.xlsx,.xls" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-app-primary">Merge into master</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('mergeModal')?.addEventListener('show.bs.modal', function (event) {
+  const btn = event.relatedTarget;
+  if (!btn) return;
+  const kind = btn.getAttribute('data-kind');
+  const title = btn.getAttribute('data-title') || 'Merge into master';
+  document.getElementById('mergeModalLabel').textContent = title;
+  const sel = document.getElementById('id_source_kind');
+  if (kind && sel) sel.value = kind;
+});
+
+(function () {
+  const storageKey = 'ldb_sel_{{ workspace.pk }}';
+  const modeEl = document.getElementById('selection_mode');
+  const idsBox = document.getElementById('selected-ids-container');
+  const labelEl = document.getElementById('selection-label');
+  const proceedBtn = document.getElementById('proceed-btn');
+  const proceedCount = document.getElementById('proceed-count');
+  const proceedForm = document.getElementById('proceed-form');
+  const pageCheck = document.getElementById('check-page');
+  const rowChecks = () => Array.from(document.querySelectorAll('.row-check'));
+
+  let state = { mode: '', ids: [] };
+  try {
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved) state = JSON.parse(saved);
+  } catch (e) {}
+
+  function save() {
+    try { sessionStorage.setItem(storageKey, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function syncUI() {
+    const count = state.mode === 'filtered'
+      ? (state.filteredCount || 0)
+      : (state.ids || []).length;
+    if (labelEl) {
+      if (state.mode === 'filtered') {
+        labelEl.textContent = `All filtered results selected (${count.toLocaleString()} rows)`
+          + (state.pendingOnly ? ' · pending only' : '');
+      } else if (count > 0) {
+        labelEl.textContent = `${count.toLocaleString()} row(s) selected`;
+      } else {
+        labelEl.textContent = 'No rows selected';
+      }
+    }
+    if (proceedCount) proceedCount.textContent = String(count);
+    if (proceedBtn) proceedBtn.disabled = count === 0;
+    if (modeEl) modeEl.value = state.mode || '';
+
+    // Sync checkboxes on this page
+    const idSet = new Set((state.ids || []).map(String));
+    rowChecks().forEach(cb => {
+      if (state.mode === 'filtered') {
+        cb.checked = true;
+      } else {
+        cb.checked = idSet.has(String(cb.value));
+      }
+    });
+    if (pageCheck) {
+      const rows = rowChecks();
+      pageCheck.checked = rows.length > 0 && rows.every(cb => cb.checked);
+      pageCheck.indeterminate = rows.some(cb => cb.checked) && !pageCheck.checked;
+    }
+  }
+
+  function setIdsMode(ids) {
+    state = { mode: 'ids', ids: Array.from(new Set(ids.map(Number).filter(Boolean))) };
+    save();
+    syncUI();
+  }
+
+  function setFilteredMode(count, pendingOnly) {
+    state = { mode: 'filtered', ids: [], filteredCount: count, pendingOnly: !!pendingOnly };
+    save();
+    syncUI();
+  }
+
+  function clearSelection() {
+    state = { mode: '', ids: [] };
+    save();
+    syncUI();
+  }
+
+  document.getElementById('btn-clear-selection')?.addEventListener('click', clearSelection);
+
+  document.getElementById('btn-select-page')?.addEventListener('click', () => {
+    const pageIds = rowChecks().map(cb => Number(cb.value));
+    if (state.mode === 'filtered') {
+      setIdsMode(pageIds);
+      return;
+    }
+    const merged = [...(state.ids || []), ...pageIds];
+    setIdsMode(merged);
+  });
+
+  pageCheck?.addEventListener('change', () => {
+    const pageIds = rowChecks().map(cb => Number(cb.value));
+    if (pageCheck.checked) {
+      if (state.mode === 'filtered') {
+        // stay filtered
+        syncUI();
+        return;
+      }
+      setIdsMode([...(state.ids || []), ...pageIds]);
+    } else {
+      if (state.mode === 'filtered') {
+        // Leaving filtered mode: keep other pages unknown → just page cleared = empty page ids mode from remaining?
+        setIdsMode((state.ids || []).filter(id => !pageIds.includes(id)));
+        return;
+      }
+      const drop = new Set(pageIds);
+      setIdsMode((state.ids || []).filter(id => !drop.has(id)));
+    }
+  });
+
+  document.querySelector('#leads-table')?.addEventListener('change', (e) => {
+    const cb = e.target.closest('.row-check');
+    if (!cb) return;
+    const id = Number(cb.value);
+    if (state.mode === 'filtered') {
+      // Switch to explicit ids: all page checked minus this one if unchecked is incomplete —
+      // when unchecking one after filtered, convert page checks to ids.
+      const pageIds = rowChecks().filter(c => c.checked).map(c => Number(c.value));
+      setIdsMode(pageIds);
+      return;
+    }
+    let ids = (state.ids || []).slice();
+    if (cb.checked) {
+      if (!ids.includes(id)) ids.push(id);
+    } else {
+      ids = ids.filter(x => x !== id);
+    }
+    setIdsMode(ids);
+  });
+
+  async function selectFiltered(btn, pendingOnly) {
+    const url = btn.getAttribute('data-url');
+    if (!url) return;
+    btn.disabled = true;
+    const prev = btn.textContent;
+    btn.textContent = 'Selecting…';
+    try {
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Failed to load IDs');
+      const data = await res.json();
+      if (data.count > 5000) {
+        // Large set: use server-side filtered mode (no huge ID list in DOM)
+        setFilteredMode(data.count, pendingOnly);
+      } else {
+        setIdsMode(data.ids || []);
+        if (pendingOnly) {
+          state.pendingOnly = true;
+          save();
+        }
+      }
+      if (data.truncated) {
+        alert('Selection capped at 100,000 rows.');
+      }
+    } catch (err) {
+      alert(err.message || 'Could not select filtered results.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = prev;
+      // restore badge HTML roughly
+      syncUI();
+    }
+  }
+
+  document.getElementById('btn-select-filtered')?.addEventListener('click', (e) => {
+    selectFiltered(e.currentTarget, false);
+  });
+  document.getElementById('btn-select-filtered-pending')?.addEventListener('click', (e) => {
+    selectFiltered(e.currentTarget, true);
+  });
+
+  const modalCountEl = document.getElementById('proceed-modal-count');
+  document.getElementById('proceedModal')?.addEventListener('show.bs.modal', () => {
+    const count = state.mode === 'filtered'
+      ? (state.filteredCount || 0)
+      : (state.ids || []).length;
+    if (modalCountEl) modalCountEl.textContent = count.toLocaleString();
+    // Reset destination dropdowns to Keep current each open
+    proceedForm?.querySelectorAll('select[name^="status_"]').forEach((sel) => {
+      sel.value = 'keep';
+    });
+  });
+
+  proceedForm?.addEventListener('submit', (e) => {
+    const count = state.mode === 'filtered'
+      ? (state.filteredCount || 0)
+      : (state.ids || []).length;
+    if (!count) {
+      e.preventDefault();
+      alert('Select rows first, or click “Select filtered results”.');
+      return;
+    }
+    const changed = Array.from(proceedForm.querySelectorAll('select[name^="status_"]'))
+      .some((sel) => sel.value && sel.value !== 'keep');
+    if (!changed) {
+      e.preventDefault();
+      alert('Choose at least one destination status to change.');
+      return;
+    }
+    idsBox.innerHTML = '';
+    proceedForm.querySelectorAll('input[name="pending_only"]').forEach(n => n.remove());
+    if (state.mode === 'filtered') {
+      modeEl.value = 'filtered';
+      if (state.pendingOnly) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'pending_only';
+        input.value = '1';
+        idsBox.appendChild(input);
+      }
+    } else {
+      modeEl.value = 'ids';
+      (state.ids || []).forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'record_ids';
+        input.value = String(id);
+        idsBox.appendChild(input);
+      });
+    }
+    // Do not clearSelection() here — syncUI would wipe selection_mode before POST.
+    // Server redirects with clear_sel=1 and we clear then.
+  });
+
+  document.querySelectorAll('form.undo-form').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      const msg = form.getAttribute('data-confirm');
+      if (msg && !window.confirm(msg)) {
+        e.preventDefault();
+      }
+    });
+  });
+
+  // After Proceed / Undo / Merge redirects
+  {% if clear_selection %}
+  clearSelection();
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.has('clear_sel')) {
+      u.searchParams.delete('clear_sel');
+      window.history.replaceState({}, '', u.pathname + (u.search || '') + u.hash);
+    }
+  } catch (e) {}
+  {% endif %}
+
+  syncUI();
+})();
+</script>
+{% endblock %}

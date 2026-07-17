@@ -1,0 +1,78 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Lead databases{% endblock %}
+{% block content %}
+<header class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>Lead databases</h1>
+    <p class="lead mb-0">Create a campaign, upload the master file, then filter and enrich from the dashboard.</p>
+  </div>
+</header>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <section class="card-app">
+      <div class="card-app-header"><h2>New database</h2></div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.master_file.id_for_label }}">{{ form.master_file.label }}</label>
+            {{ form.master_file }}
+            {% if form.master_file.help_text %}<div class="form-text">{{ form.master_file.help_text }}</div>{% endif %}
+            {% if form.master_file.errors %}<div class="text-danger small">{{ form.master_file.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.source_kind.id_for_label }}">{{ form.source_kind.label }}</label>
+            {{ form.source_kind }}
+          </div>
+          <button type="submit" class="btn btn-app-primary w-100">
+            <i class="bi bi-upload me-1"></i> Upload master → open dashboard
+          </button>
+        </form>
+      </div>
+    </section>
+  </div>
+  <div class="col-lg-7">
+    <section class="card-app">
+      <div class="card-app-header"><h2>Your databases</h2></div>
+      <div class="card-body p-0">
+        {% if workspaces %}
+        <div class="table-responsive">
+          <table class="table table-app mb-0">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Records</th>
+                <th>Enriched</th>
+                <th>Updated</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ws in workspaces %}
+              <tr>
+                <td class="fw-semibold">{{ ws.name }}</td>
+                <td>{{ ws.row_count|floatformat:0 }}</td>
+                <td>{{ ws.enriched_count|floatformat:0 }}</td>
+                <td class="small text-muted">{{ ws.updated_at|timesince }} ago</td>
+                <td class="text-end">
+                  <a href="{% url 'dashboard:workspace' pk=ws.pk %}" class="btn btn-sm btn-app-primary">Open</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted p-4 mb-0">No lead databases yet. Create one with a master CSV on the left.</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
