@@ -104,6 +104,8 @@ INSTALLED_APPS = [
     'registry',
     'automation',
     'dashboard',
+    # Must be last — auto-deletes FileField files on change/delete
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 MIDDLEWARE = [
