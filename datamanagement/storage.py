@@ -23,6 +23,10 @@ class LocalAndS3Storage(FileSystemStorage):
     def _s3_enabled(self) -> bool:
         return bool(getattr(settings, 'USE_S3', False))
 
+    def _local_path(self, name: str) -> Path:
+        """Filesystem path without triggering S3 download (avoids recursion)."""
+        return Path(super().path(name))
+
     def _s3_client(self):
         import boto3
 
@@ -42,7 +46,7 @@ class LocalAndS3Storage(FileSystemStorage):
     def _upload_to_s3(self, name: str) -> None:
         if not self._s3_enabled():
             return
-        local = Path(self.path(name))
+        local = self._local_path(name)
         if not local.is_file():
             return
         try:
@@ -58,7 +62,7 @@ class LocalAndS3Storage(FileSystemStorage):
     def _download_from_s3(self, name: str) -> bool:
         if not self._s3_enabled():
             return False
-        local = Path(self.path(name))
+        local = self._local_path(name)
         local.parent.mkdir(parents=True, exist_ok=True)
         try:
             client = self._s3_client()
@@ -90,7 +94,7 @@ class LocalAndS3Storage(FileSystemStorage):
             logger.exception('S3 delete failed for %s', name)
 
     def path(self, name):
-        local = Path(super().path(name))
+        local = self._local_path(name)
         if not local.is_file() and self._s3_enabled() and name:
             self._download_from_s3(name)
         return str(local)
