@@ -187,5 +187,25 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# --- AWS S3 (optional). Set USE_S3=true and credentials in `.env`.
+# Local MEDIA_ROOT remains primary so FileField.path keeps working; files are
+# also mirrored to S3. See docs/S3_SETUP.md.
+USE_S3 = os.environ.get('USE_S3', 'false').strip().lower() in ('1', 'true', 'yes', 'on')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '').strip()
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '').strip()
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '').strip()
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-north-1').strip() or 'eu-north-1'
+AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media').strip() or 'media'
+
+if USE_S3 and AWS_STORAGE_BUCKET_NAME:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'datamanagement.storage.LocalAndS3Storage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024

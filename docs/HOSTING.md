@@ -86,13 +86,42 @@ If the repo is private, use a GitHub personal access token or SSH deploy key.
 
 ## 4. Python virtualenv & dependencies
 
+Your AMI may be **Ubuntu 26.04** with **Python 3.14 only** (no `python3.12` in apt). That is fine.
+
+Use the system `python3`, but install **pandas 2.3.3+** (has prebuilt 3.14 wheels).  
+Older `pandas==2.2.3` tries to compile from source and gets **OOM-killed** on `t3.micro` (exit 137).
+
 ```bash
 cd /var/www/data-management-mava
+
+# Clean any broken venv
+deactivate 2>/dev/null || true
+rm -rf env
+
 python3 -m venv env
 source env/bin/activate
+python --version   # 3.14.x is OK
+
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install gunicorn
+```
+
+If `requirements.txt` on the server still says `pandas==2.2.3`, fix it first:
+
+```bash
+sed -i 's/pandas==2.2.3/pandas==2.3.3/' requirements.txt
+```
+
+Or edit by hand: `nano requirements.txt` → change that line → save.
+
+### Optional: 2G swap (safety net on t3.micro)
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
 ---
@@ -335,17 +364,27 @@ sudo systemctl restart datamanagement
 
 ---
 
-## 13. S3 later (not now)
+## 13. S3 media storage
 
-You correctly chose **None** for EC2 file systems. When you are ready:
+Full walkthrough (bucket → IAM keys → `.env` → test): **[docs/S3_SETUP.md](S3_SETUP.md)**
 
-1. Create an S3 bucket
-2. Add IAM role or access keys to the instance
-3. Install `django-storages` + `boto3`
-4. Point `MEDIA` (and optionally static) to S3
+Summary on the server after code is deployed:
 
-Until then, uploads stay under `/var/www/data-management-mava/media/`.  
-**Back up that folder** if the data matters (AMI snapshot or `scp` download).
+```env
+USE_S3=true
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_STORAGE_BUCKET_NAME=your-bucket-name
+AWS_S3_REGION_NAME=eu-north-1
+AWS_LOCATION=media
+```
+
+```bash
+pip install -r requirements.txt
+sudo systemctl restart datamanagement
+```
+
+Uploads stay on local `media/` **and** are mirrored to S3 (so merges / `.path` keep working).
 
 ---
 
