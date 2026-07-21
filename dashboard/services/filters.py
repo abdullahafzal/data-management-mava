@@ -26,9 +26,11 @@ REQUIRED_FILTERS = (
     {
         'key': 'sub_industry',
         'label': 'Sub industry',
+        # Master sheet column: Business Type
         'aliases': (
+            'business type', 'business_type', 'biz type',
             'sub industry', 'sub-industry', 'sub_industry', 'sub category',
-            'subcategory', 'category',
+            'subcategory',
         ),
     },
     {
@@ -38,16 +40,14 @@ REQUIRED_FILTERS = (
             'facility state', 'state', 'facility_state', 'search_state',
             'src_facility state',
         ),
-        # Also match any header containing the word "state" (e.g. Facility State).
         'contain_tokens': ('state',),
     },
     {
         'key': 'county',
         'label': 'County',
-        # DMV / dealer sheets use Business Type for this campaign filter.
+        # Master sheet column: Facility County
         'aliases': (
-            'business type', 'businesstype', 'business_type', 'biz type',
-            'facility county', 'county', 'facility_county', 'src_facility county',
+            'facility county', 'facility_county', 'county', 'src_facility county',
         ),
         'contain_tokens': ('county',),
     },
