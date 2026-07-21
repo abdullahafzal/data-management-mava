@@ -10,6 +10,7 @@ urlpatterns = [
     path('<int:pk>/download/', views.WorkspaceDownloadMasterView.as_view(), name='download_master'),
     path('<int:pk>/merge/', views.WorkspaceMergeView.as_view(), name='merge'),
     path('<int:pk>/proceed/', views.WorkspaceProceedView.as_view(), name='proceed'),
+    path('<int:pk>/process-next/', views.WorkspaceProcessNextView.as_view(), name='process_next'),
     path(
         '<int:pk>/actions/<int:action_pk>/undo/',
         views.WorkspaceUndoActionView.as_view(),

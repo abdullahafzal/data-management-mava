@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count
@@ -18,8 +19,35 @@ from .services.filters import (
     query_string_from_params,
     workspace_metrics,
 )
-from .services.history import apply_destination_statuses, log_merge, undo_proceed_action
+from .services.history import log_merge, proceed_workspace, undo_proceed_action
 from .services.ingest import append_source_and_merge, create_workspace_with_master
+from .services.process_next import (
+    channel_updates_for_process_next,
+    detect_next_step,
+    xverifier_process_enabled,
+)
+
+
+def _resolve_selection(workspace, params):
+    """Return (record_ids, mode) from POST params or raise via empty list + mode None."""
+    mode = (params.get('selection_mode') or '').strip()
+    base = workspace.records.all()
+    if mode == 'filtered':
+        target = apply_filters(base, params, workspace)
+        if (params.get('pending_only') or '').strip() in ('1', 'true', 'yes'):
+            target = target.filter(process_status=LeadRecord.ProcessStatus.PENDING)
+    elif mode == 'ids':
+        raw_ids = params.getlist('record_ids')
+        try:
+            ids = [int(x) for x in raw_ids if str(x).strip().isdigit()]
+        except (TypeError, ValueError):
+            ids = []
+        if not ids:
+            return [], mode
+        target = base.filter(id__in=ids)
+    else:
+        return [], ''
+    return list(target.values_list('id', flat=True)), mode
 
 
 def _refresh_process_counts(workspace: LeadWorkspace) -> None:
@@ -139,6 +167,8 @@ class WorkspaceDashboardView(View):
             'destinations': LeadRecord.DESTINATION_FIELDS,
             'process_choices': LeadRecord.ProcessStatus.choices,
             'clear_selection': (request.GET.get('clear_sel') or '') == '1',
+            'pipeline_test_limit': int(getattr(settings, 'MILLIONVERIFIER_UPLOAD_ROW_LIMIT', 5) or 5) or 5,
+            'xverifier_process': xverifier_process_enabled(),
         })
 
 
@@ -232,41 +262,24 @@ class WorkspaceSelectionIdsView(View):
 
 class WorkspaceProceedView(View):
     """
-    Dummy proceed: set per-destination statuses on selected rows via modal.
-    selection_mode=ids|filtered; channel fields status_millionverifier etc.
-    Values: pending|proceeded — omit / 'keep' to leave unchanged.
+    Proceed: run pipeline steps (MV, XVerify, Smartlead, SimpleTexting) on selected rows,
+    then update destination statuses. Test cap: MILLIONVERIFIER_UPLOAD_ROW_LIMIT (default 5).
     """
 
     def post(self, request, pk):
         workspace = get_object_or_404(LeadWorkspace, pk=pk)
         params = request.POST
-        mode = (params.get('selection_mode') or '').strip()
+        record_ids, mode = _resolve_selection(workspace, params)
 
-        base = workspace.records.all()
-        if mode == 'filtered':
-            target = apply_filters(base, params, workspace)
-            if (params.get('pending_only') or '').strip() in ('1', 'true', 'yes'):
-                target = target.filter(process_status=LeadRecord.ProcessStatus.PENDING)
-        elif mode == 'ids':
-            raw_ids = params.getlist('record_ids')
-            try:
-                ids = [int(x) for x in raw_ids if str(x).strip().isdigit()]
-            except (TypeError, ValueError):
-                ids = []
-            if not ids:
-                messages.warning(request, 'No rows selected. Check rows or use “Select filtered results”.')
-                return _redirect_workspace(pk, params, clear_sel=True)
-            target = base.filter(id__in=ids)
-        else:
+        if not mode:
             messages.warning(
                 request,
                 'Select rows first (checkboxes) or click “Select filtered results”, then Proceed.',
             )
             return _redirect_workspace(pk, params)
 
-        record_ids = list(target.values_list('id', flat=True))
         if not record_ids:
-            messages.warning(request, 'No rows in selection.')
+            messages.warning(request, 'No rows selected. Check rows or use “Select filtered results”.')
             return _redirect_workspace(pk, params, clear_sel=True)
 
         channel_updates = {}
@@ -276,7 +289,7 @@ class WorkspaceProceedView(View):
                 channel_updates[key] = raw
 
         try:
-            action = apply_destination_statuses(
+            action, pipeline_results = proceed_workspace(
                 workspace,
                 record_ids=record_ids,
                 channel_updates=channel_updates,
@@ -286,12 +299,73 @@ class WorkspaceProceedView(View):
             messages.warning(request, str(exc))
             return _redirect_workspace(pk, params)
 
-        messages.success(
-            request,
-            f'{action.summary}. '
-            f'{workspace.pending_count:,} still pending overall. '
-            f'Undo available in Action history.',
-        )
+        failed = [r for r in pipeline_results if not r.ok]
+        if failed:
+            messages.warning(
+                request,
+                f'{action.summary} — {len(failed)} step(s) failed. See Action history.',
+            )
+        else:
+            messages.success(
+                request,
+                f'{action.summary} Undo available in Action history.',
+            )
+        return _redirect_workspace(pk, params, clear_sel=True)
+
+
+class WorkspaceProcessNextView(View):
+    """
+    Auto-run the next pipeline step for the selection (MV → XVerify → Smartlead → SimpleTexting).
+    """
+
+    def post(self, request, pk):
+        workspace = get_object_or_404(LeadWorkspace, pk=pk)
+        params = request.POST
+        record_ids, mode = _resolve_selection(workspace, params)
+
+        if not mode:
+            messages.warning(
+                request,
+                'Select rows first, then click Process next.',
+            )
+            return _redirect_workspace(pk, params)
+
+        if not record_ids:
+            messages.warning(request, 'No rows in selection.')
+            return _redirect_workspace(pk, params, clear_sel=True)
+
+        rows = list(workspace.records.filter(id__in=record_ids).order_by('id'))
+        try:
+            channel_updates = channel_updates_for_process_next(rows)
+        except ValueError as exc:
+            messages.warning(request, str(exc))
+            return _redirect_workspace(pk, params)
+
+        step = detect_next_step(rows)
+        step_label = step[1] if step else 'Pipeline'
+
+        try:
+            action, pipeline_results = proceed_workspace(
+                workspace,
+                record_ids=record_ids,
+                channel_updates=channel_updates,
+                selection_mode=mode,
+            )
+        except ValueError as exc:
+            messages.warning(request, str(exc))
+            return _redirect_workspace(pk, params)
+
+        failed = [r for r in pipeline_results if not r.ok]
+        if failed:
+            messages.warning(
+                request,
+                f'Process next ({step_label}): {failed[0].message}',
+            )
+        else:
+            messages.success(
+                request,
+                f'Process next — {step_label}: {action.summary}',
+            )
         return _redirect_workspace(pk, params, clear_sel=True)
 
 

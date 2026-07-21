@@ -122,6 +122,23 @@
 .ldb-process-pending { background: #fff7ed; color: #c2410c; }
 .ldb-process-proceeded { background: #ecfdf5; color: #047857; }
 
+.ldb-mv-cell { line-height: 1.5; }
+.ldb-mv {
+  display: inline-block;
+  padding: 0.12rem 0.35rem;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin: 0.1rem 0.15rem 0.1rem 0;
+  white-space: nowrap;
+}
+.ldb-mv-good { background: #ecfdf5; color: #047857; }
+.ldb-mv-invalid, .ldb-mv-bad { background: #fef2f2; color: #b91c1c; }
+.ldb-mv-risky { background: #fff7ed; color: #c2410c; }
+.ldb-mv-unknown { background: #f1f5f9; color: #64748b; }
+.ldb-mv-disposable { background: #fce7f3; color: #9d174d; }
+.ldb-mv-pending { background: #fef9c3; color: #a16207; border: 1px dashed #ca8a04; }
+
 .ldb-table th.small {
   font-size: 0.72rem;
   max-width: 6.5rem;

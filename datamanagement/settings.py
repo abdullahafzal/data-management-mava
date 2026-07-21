@@ -29,6 +29,10 @@ SIMPLETEXTING_API_KEY = os.environ.get('SIMPLETEXTING_API_KEY', '')
 GHL_API_KEY = os.environ.get('GHL_API_KEY', '')
 GHL_LOCATION_ID = os.environ.get('GHL_LOCATION_ID', '')
 XVERIFY_DOMAIN = os.environ.get('XVERIFY_DOMAIN', '')
+# When true: Process next runs XVerify → SimpleTexting for phones. When false, phone steps are skipped.
+XVERIFIER_PROCESS = os.environ.get('XVERIFIER_PROCESS', 'false').strip().lower() in (
+    '1', 'true', 'yes', 'on',
+)
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o-mini')
 

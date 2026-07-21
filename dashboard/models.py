@@ -117,6 +117,10 @@ class LeadRecord(models.Model):
         max_length=32, choices=ProcessStatus.choices,
         default=ProcessStatus.PENDING, db_index=True,
     )
+    # Per-email / per-phone verification results (survives merge when address matches).
+    # {"emails": {"a@b.com": {"millionverifier": "good", "checked_at": "..."}},
+    #  "phones": {"9146825000": {"xverify": "valid", "checked_at": "..."}}}
+    verification_data = models.JSONField(default=dict, blank=True)
     is_enriched = models.BooleanField(default=False, db_index=True)
     match_key_used = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

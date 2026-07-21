@@ -37,10 +37,27 @@
       <i class="bi bi-download me-1"></i> Download master
     </button>
     {% endif %}
-    <button type="button" class="btn btn-outline-secondary" disabled
-            title="Coming in a later phase — auto-route to next verification step">
-      <i class="bi bi-arrow-right-circle me-1"></i> Process next
-    </button>
+    <form method="post" action="{% url 'dashboard:process_next' pk=workspace.pk %}" id="process-next-form" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="selection_mode" id="process_next_selection_mode" value="">
+      <div id="process-next-ids-container"></div>
+      <input type="hidden" name="q" value="{{ filters.q }}">
+      <input type="hidden" name="industry" value="{{ filters.industry }}">
+      <input type="hidden" name="sub_industry" value="{{ filters.sub_industry }}">
+      <input type="hidden" name="state" value="{{ filters.state }}">
+      <input type="hidden" name="county" value="{{ filters.county }}">
+      <input type="hidden" name="city" value="{{ filters.city }}">
+      <input type="hidden" name="process" value="{{ filters.process }}">
+      <input type="hidden" name="source" value="{{ filters.source }}">
+      <input type="hidden" name="status" value="{{ filters.status }}">
+      {% for ff in additional_filters %}
+      <input type="hidden" name="{{ ff.param }}" value="{{ ff.selected }}">
+      {% endfor %}
+      <button type="submit" class="btn btn-outline-secondary" id="process-next-btn" disabled
+              title="{% if xverifier_process %}MV → Smartlead (good) → XVerify → SimpleTexting{% else %}MV → Smartlead (good emails only). Set XVERIFIER_PROCESS=true for phone steps.{% endif %}">
+        <i class="bi bi-arrow-right-circle me-1"></i> Process next
+      </button>
+    </form>
     <button type="button" class="btn btn-app-primary" data-bs-toggle="modal" data-bs-target="#mergeModal"
             data-kind="{{ source_kinds.OTHER }}" data-title="Upload CSV">
       <i class="bi bi-upload me-1"></i> Upload CSV
@@ -283,8 +300,13 @@
             {% endfor %}
             {% if r.sources|length > 1 %}<span class="ldb-src ldb-src-merged">Merged</span>{% endif %}
           </td>
-          <td>
-            <span class="ldb-process ldb-process-{{ r.status_millionverifier }}">{{ r.get_status_millionverifier_display }}</span>
+          <td class="ldb-mv-cell small">
+            {% mv_email_statuses r as mv_items %}
+            {% for item in mv_items %}
+            <span class="ldb-mv ldb-mv-{{ item.category }}" title="{{ item.email }}">{{ item.label }}</span>
+            {% empty %}
+            <span class="text-muted">—</span>
+            {% endfor %}
           </td>
           <td>
             <span class="ldb-process ldb-process-{{ r.status_email_verifier }}">{{ r.get_status_email_verifier_display }}</span>
@@ -351,13 +373,16 @@
       <input type="hidden" name="{{ ff.param }}" value="{{ ff.selected }}">
       {% endfor %}
       <div class="modal-header">
-        <h5 class="modal-title" id="proceedModalLabel">Set destination status</h5>
+        <h5 class="modal-title" id="proceedModalLabel">Run pipeline &amp; update status</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <p class="small text-muted mb-3">
           Applying to <strong id="proceed-modal-count">0</strong> selected row(s).
-          Leave as <em>Keep current</em> to leave that destination unchanged.
+          Set a destination to <em>Proceeded</em> to run its pipeline step
+          (first <strong>{{ pipeline_test_limit }}</strong> unverified emails/phones — test limit).
+          MillionVerifier shows <strong>Good / Bad / Risky</strong> per email in the table.
+          After a merge, new emails start as <em>Unverified</em>; existing results are kept.
         </p>
         {% for key, field, label in destinations %}
         <div class="mb-3">
@@ -373,7 +398,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-success" id="proceed-confirm-btn">Apply status</button>
+        <button type="submit" class="btn btn-success" id="proceed-confirm-btn">Run &amp; apply</button>
       </div>
     </form>
   </div>
@@ -434,6 +459,10 @@ document.getElementById('mergeModal')?.addEventListener('show.bs.modal', functio
   const proceedBtn = document.getElementById('proceed-btn');
   const proceedCount = document.getElementById('proceed-count');
   const proceedForm = document.getElementById('proceed-form');
+  const processNextBtn = document.getElementById('process-next-btn');
+  const processNextForm = document.getElementById('process-next-form');
+  const processNextModeEl = document.getElementById('process_next_selection_mode');
+  const processNextIdsBox = document.getElementById('process-next-ids-container');
   const pageCheck = document.getElementById('check-page');
   const rowChecks = () => Array.from(document.querySelectorAll('.row-check'));
 
@@ -463,6 +492,7 @@ document.getElementById('mergeModal')?.addEventListener('show.bs.modal', functio
     }
     if (proceedCount) proceedCount.textContent = String(count);
     if (proceedBtn) proceedBtn.disabled = count === 0;
+    if (processNextBtn) processNextBtn.disabled = count === 0;
     if (modeEl) modeEl.value = state.mode || '';
 
     // Sync checkboxes on this page
@@ -604,6 +634,42 @@ document.getElementById('mergeModal')?.addEventListener('show.bs.modal', functio
     });
   });
 
+  function fillSelectionIntoForm(form, modeInput, idsContainer) {
+    const count = state.mode === 'filtered'
+      ? (state.filteredCount || 0)
+      : (state.ids || []).length;
+    if (!count) return false;
+    idsContainer.innerHTML = '';
+    form.querySelectorAll('input[name="pending_only"]').forEach(n => n.remove());
+    if (state.mode === 'filtered') {
+      modeInput.value = 'filtered';
+      if (state.pendingOnly) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'pending_only';
+        input.value = '1';
+        idsContainer.appendChild(input);
+      }
+    } else {
+      modeInput.value = 'ids';
+      (state.ids || []).forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'record_ids';
+        input.value = String(id);
+        idsContainer.appendChild(input);
+      });
+    }
+    return true;
+  }
+
+  processNextForm?.addEventListener('submit', (e) => {
+    if (!fillSelectionIntoForm(processNextForm, processNextModeEl, processNextIdsBox)) {
+      e.preventDefault();
+      alert('Select rows first, or click “Select filtered results”.');
+    }
+  });
+
   proceedForm?.addEventListener('submit', (e) => {
     const count = state.mode === 'filtered'
       ? (state.filteredCount || 0)
@@ -613,6 +679,10 @@ document.getElementById('mergeModal')?.addEventListener('show.bs.modal', functio
       alert('Select rows first, or click “Select filtered results”.');
       return;
     }
+    if (!fillSelectionIntoForm(proceedForm, modeEl, idsBox)) {
+      e.preventDefault();
+      return;
+    }
     const changed = Array.from(proceedForm.querySelectorAll('select[name^="status_"]'))
       .some((sel) => sel.value && sel.value !== 'keep');
     if (!changed) {
@@ -620,29 +690,6 @@ document.getElementById('mergeModal')?.addEventListener('show.bs.modal', functio
       alert('Choose at least one destination status to change.');
       return;
     }
-    idsBox.innerHTML = '';
-    proceedForm.querySelectorAll('input[name="pending_only"]').forEach(n => n.remove());
-    if (state.mode === 'filtered') {
-      modeEl.value = 'filtered';
-      if (state.pendingOnly) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'pending_only';
-        input.value = '1';
-        idsBox.appendChild(input);
-      }
-    } else {
-      modeEl.value = 'ids';
-      (state.ids || []).forEach(id => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'record_ids';
-        input.value = String(id);
-        idsBox.appendChild(input);
-      });
-    }
-    // Do not clearSelection() here — syncUI would wipe selection_mode before POST.
-    // Server redirects with clear_sel=1 and we clear then.
   });
 
   document.querySelectorAll('form.undo-form').forEach((form) => {

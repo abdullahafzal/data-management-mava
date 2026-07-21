@@ -18,6 +18,8 @@ from pipeline.services.multi_merge import (
 
 from ..models import LeadRecord, LeadSourceFile, LeadWorkspace
 from .filters import REQUIRED_FILTERS, find_filter_column
+from .record_extract import extract_all_emails, extract_all_phones
+from .verification_store import merge_verification_on_rematch, sync_mv_gate_status
 
 INTERNAL_COLS = frozenset({
     'row_sources', 'match_key_used', '_merge_source', '_merge_row',
@@ -259,9 +261,15 @@ def dataframe_to_records(
             snap.get(f'fac:{facility.upper()}') if facility else None
         )
         dest_kwargs = {}
+        verification_data = {}
         if isinstance(prev, dict):
             for key, field, _label in LeadRecord.DESTINATION_FIELDS:
                 dest_kwargs[field] = prev.get(key, LeadRecord.ProcessStatus.PENDING)
+            verification_data = merge_verification_on_rematch(
+                prev.get('verification_data'),
+                extract_all_emails(data, display_columns),
+                extract_all_phones(data, display_columns),
+            )
         elif prev == LeadRecord.ProcessStatus.PROCEEDED:
             for _key, field, _label in LeadRecord.DESTINATION_FIELDS:
                 dest_kwargs[field] = LeadRecord.ProcessStatus.PROCEEDED
@@ -278,23 +286,27 @@ def dataframe_to_records(
             status=status,
             is_enriched=is_enriched,
             match_key_used=_cell(row, match_c)[:64] if match_c else '',
+            verification_data=verification_data,
             **dest_kwargs,
         )
+        sync_mv_gate_status(rec)
         rec.sync_overall_process_status()
         records.append(rec)
     return records, row_dicts
 
 
 def _snapshot_process_status(workspace: LeadWorkspace) -> dict:
-    """Map destination statuses by public_id and facility # before rebuild."""
+    """Map destination + verification data by public_id and facility # before rebuild."""
+    from .verification_store import snapshot_verification
+
     snap: dict = {}
     fac_col = _find_col(workspace.columns or [], FACILITY_ALIASES)
     only_fields = [
-        'public_id', 'data', 'process_status',
+        'public_id', 'data', 'process_status', 'verification_data',
         *[f for _k, f, _l in LeadRecord.DESTINATION_FIELDS],
     ]
     for r in workspace.records.only(*only_fields).iterator(chunk_size=2000):
-        payload = r.destination_statuses()
+        payload = snapshot_verification(r)
         snap[f'id:{r.public_id}'] = payload
         if fac_col:
             fac = r.cell(fac_col)
