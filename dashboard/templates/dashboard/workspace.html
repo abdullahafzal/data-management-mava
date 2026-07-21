@@ -176,16 +176,19 @@
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-select-page">
       Select this page
     </button>
-    <button type="button" class="btn btn-sm btn-app-primary" id="btn-select-filtered"
+    <button type="button" class="btn btn-sm {% if has_active_filters %}btn-app-primary{% else %}btn-outline-secondary{% endif %}"
+            id="btn-select-filtered"
             data-url="{{ selection_ids_url }}?{{ filter_qs }}"
-            data-working-set="{{ working_set_count }}">
+            data-working-set="{{ working_set_count }}"
+            {% if not has_active_filters %}disabled title="Apply at least one filter first"{% else %}title="Select all rows matching current filters"{% endif %}>
       Select filtered results
-      {% if working_set_count %}<span class="badge text-bg-light text-primary ms-1">{{ working_set_count }}</span>{% endif %}
+      {% if has_active_filters and working_set_count %}<span class="badge text-bg-light text-primary ms-1">{{ working_set_count }}</span>{% endif %}
     </button>
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-select-filtered-pending"
             data-url="{{ selection_ids_url }}?{{ filter_qs }}{% if filter_qs %}&{% endif %}pending_only=1"
-            title="Only pending rows in the filtered set">
+            {% if not has_active_filters %}disabled title="Apply at least one filter first"{% else %}title="Only pending rows in the filtered set"{% endif %}>
       Select filtered pending
+      {% if has_active_filters and pending_in_view %}<span class="badge text-bg-light text-secondary ms-1">{{ pending_in_view }}</span>{% endif %}
     </button>
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-clear-selection">Clear selection</button>
     <span class="small text-muted ms-1" id="selection-label">No rows selected</span>
@@ -549,6 +552,7 @@ document.getElementById('mergeModal')?.addEventListener('show.bs.modal', functio
   });
 
   async function selectFiltered(btn, pendingOnly) {
+    if (btn.disabled) return;
     const url = btn.getAttribute('data-url');
     if (!url) return;
     btn.disabled = true;

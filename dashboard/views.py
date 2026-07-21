@@ -126,6 +126,7 @@ class WorkspaceDashboardView(View):
             'additional_filters': ui['additional_filters'],
             'choices': ui,
             'active_filters': ui['active_filters'],
+            'has_active_filters': bool(ui['active_filters']),
             'filters': ui['selected'],
             'filter_qs': query_string_from_params(request.GET),
             'pending_in_view': pending_in_view,
