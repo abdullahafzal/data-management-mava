@@ -48,6 +48,7 @@
       <input type="hidden" name="county" value="{{ filters.county }}">
       <input type="hidden" name="city" value="{{ filters.city }}">
       <input type="hidden" name="process" value="{{ filters.process }}">
+      <input type="hidden" name="merge" value="{{ filters.merge }}">
       <input type="hidden" name="source" value="{{ filters.source }}">
       <input type="hidden" name="status" value="{{ filters.status }}">
       {% for ff in additional_filters %}
@@ -138,6 +139,15 @@
             {% endfor %}
           </select>
         </div>
+        <div class="col-6 col-md-3 col-lg-2">
+          <label class="form-label small text-muted mb-1" title="Rows combined from 2+ uploaded files">Merge</label>
+          <select name="merge" class="form-select">
+            <option value="">All</option>
+            {% for val, label in choices.merge_choices %}
+            <option value="{{ val }}" {% if filters.merge == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     </div>
 
@@ -177,6 +187,16 @@
       <span class="text-muted small ms-2">Quick process:</span>
       <a class="ldb-chip text-decoration-none" href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}process=pending">Pending</a>
       <a class="ldb-chip ldb-chip-source text-decoration-none" href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}process=proceeded">Proceeded</a>
+      <span class="text-muted small ms-2">Quick merge:</span>
+      <a class="ldb-chip ldb-chip-source text-decoration-none{% if filters.merge == 'merged' %} border border-primary{% endif %}"
+         href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}merge=merged"
+         title="Rows that matched across files and were combined into one">
+        Merged rows{% if choices.merged_count %} ({{ choices.merged_count }}){% endif %}
+      </a>
+      <a class="ldb-chip text-decoration-none{% if filters.merge == 'single' %} border border-primary{% endif %}"
+         href="?{% if filter_qs %}{{ filter_qs }}&{% endif %}merge=single">
+        Single source
+      </a>
       {% if choices.sources %}
       <span class="text-muted small ms-2">Quick source:</span>
       {% for s in choices.sources %}
@@ -367,6 +387,7 @@
       <input type="hidden" name="county" value="{{ filters.county }}">
       <input type="hidden" name="city" value="{{ filters.city }}">
       <input type="hidden" name="process" value="{{ filters.process }}">
+      <input type="hidden" name="merge" value="{{ filters.merge }}">
       <input type="hidden" name="source" value="{{ filters.source }}">
       <input type="hidden" name="status" value="{{ filters.status }}">
       {% for ff in additional_filters %}
