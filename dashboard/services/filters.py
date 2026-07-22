@@ -135,10 +135,54 @@ def _filter_by_source(qs: QuerySet, source: str) -> QuerySet:
     if connection.vendor == 'postgresql':
         return qs.filter(sources__contains=[source])
     safe = source.replace('"', '')
-    return qs.annotate(
-        _sources_txt=Cast('sources', CharField(max_length=2048)),
-    ).filter(_sources_txt__icontains=f'"{safe}"')
+    if '_sources_txt' not in qs.query.annotations:
+        qs = qs.annotate(_sources_txt=Cast('sources', CharField(max_length=2048)))
+    return qs.filter(_sources_txt__icontains=f'"{safe}"')
 
+
+MERGE_FILTER_CHOICES = (
+    ('merged', 'Merged rows (2+ sources)'),
+    ('single', 'Single source only'),
+    ('match_facility', 'Matched by Facility #'),
+    ('match_address', 'Matched by Street + City'),
+    ('match_name_city', 'Matched by Name + City'),
+)
+
+
+def _annotate_sources_text(qs: QuerySet) -> QuerySet:
+    if '_sources_txt' in qs.query.annotations:
+        return qs
+    return qs.annotate(_sources_txt=Cast('sources', CharField(max_length=2048)))
+
+
+def _filter_by_merge(qs: QuerySet, merge: str) -> QuerySet:
+    """
+    Filter rows that were combined from multiple files, or by match key used.
+    merged = sources JSON array has 2+ entries (comma between items).
+    """
+    from django.db.models import Q
+
+    merge = (merge or '').strip().lower()
+    if not merge:
+        return qs
+
+    if merge == 'merged':
+        # Cover both ["A", "B"] and ["A","B"]
+        return _annotate_sources_text(qs).filter(
+            Q(_sources_txt__contains=', "') | Q(_sources_txt__contains=',"')
+        )
+
+    if merge == 'single':
+        return _annotate_sources_text(qs).exclude(
+            Q(_sources_txt__contains=', "') | Q(_sources_txt__contains=',"')
+        )
+
+    if merge.startswith('match_'):
+        level = merge[len('match_'):]
+        if level in ('facility', 'address', 'name_city'):
+            return qs.filter(match_key_used=level)
+
+    return qs
 
 def _values_for_column(workspace: LeadWorkspace, column: str, limit: int = 200) -> list[str]:
     """Distinct non-empty values for a data column (from stored filter_fields or records)."""
@@ -287,6 +331,7 @@ def apply_filters(qs: QuerySet, params, workspace: LeadWorkspace) -> QuerySet:
     source = (params.get('source') or '').strip()
     status = (params.get('status') or '').strip()
     process = (params.get('process') or '').strip()
+    merge = (params.get('merge') or '').strip()
 
     if q:
         qs = qs.filter(search_text__icontains=q.lower())
@@ -300,6 +345,8 @@ def apply_filters(qs: QuerySet, params, workspace: LeadWorkspace) -> QuerySet:
     if source:
         qs = _filter_by_source(qs, source)
 
+    if merge:
+        qs = _filter_by_merge(qs, merge)
     # Required campaign filters (named params)
     for req in resolve_required_filters(workspace, params):
         val = req['selected']
@@ -339,16 +386,17 @@ def filter_ui_context(workspace: LeadWorkspace, params) -> dict:
         active.append({'key': 'q', 'label': 'Search', 'value': q})
 
     process = (params.get('process') or '').strip()
+    merge = (params.get('merge') or '').strip()
     required_filters = resolve_required_filters(workspace, params)
     additional_filters = resolve_additional_filters(workspace, params)
 
     selected = {
         'q': q,
         'process': process,
+        'merge': merge,
         'source': (params.get('source') or '').strip(),
         'status': (params.get('status') or '').strip(),
     }
-
     for req in required_filters:
         selected[req['param']] = req['selected']
         if req['selected']:
@@ -371,6 +419,10 @@ def filter_ui_context(workspace: LeadWorkspace, params) -> dict:
         label = dict(LeadRecord.ProcessStatus.choices).get(process, process)
         active.append({'key': 'process', 'label': 'Process', 'value': label})
 
+    if merge:
+        merge_label = dict(MERGE_FILTER_CHOICES).get(merge, merge)
+        active.append({'key': 'merge', 'label': 'Merge', 'value': merge_label})
+
     src = selected['source']
     if src:
         active.append({'key': 'source', 'label': 'Source', 'value': src})
@@ -378,6 +430,12 @@ def filter_ui_context(workspace: LeadWorkspace, params) -> dict:
     if st:
         label = dict(LeadRecord.Status.choices).get(st, st)
         active.append({'key': 'status', 'label': 'Research', 'value': label})
+
+    # Count merged rows for quick-chip badge (sources JSON with 2+ items)
+    from django.db.models import Q
+    merged_count = _annotate_sources_text(workspace.records.all()).filter(
+        Q(_sources_txt__contains=', "') | Q(_sources_txt__contains=',"')
+    ).count()
 
     # Back-compat: flat list (required first) for any older template refs
     column_filters = required_filters + additional_filters
@@ -390,10 +448,11 @@ def filter_ui_context(workspace: LeadWorkspace, params) -> dict:
         'source_counts': source_counts,
         'statuses': LeadRecord.Status.choices,
         'process_statuses': LeadRecord.ProcessStatus.choices,
+        'merge_choices': MERGE_FILTER_CHOICES,
+        'merged_count': merged_count,
         'selected': selected,
         'active_filters': active,
     }
-
 
 def workspace_metrics(workspace: LeadWorkspace, filtered: QuerySet) -> dict:
     pending = workspace.records.filter(
