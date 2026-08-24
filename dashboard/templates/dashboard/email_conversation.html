@@ -1,0 +1,246 @@
+{% extends "pipeline/base.html" %}
+{% load static %}
+{% block title %}
+  {% if lead.first_name %}{{ lead.first_name }} {{ lead.last_name }}{% else %}{{ lead.email }}{% endif %}
+  — Chat
+{% endblock %}
+{% block extra_css %}
+<link href="{% static 'dashboard/css/dashboard.css' %}?v=chat2" rel="stylesheet">
+<style>
+  /* WhatsApp-style chat — scoped + high specificity so layout always wins */
+  .wa-shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1rem;
+    min-height: 72vh;
+  }
+  @media (max-width: 900px) {
+    .wa-shell { grid-template-columns: 1fr; }
+  }
+  .wa-people {
+    background: #fff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 72vh;
+  }
+  .wa-people-head {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .wa-people-list { overflow-y: auto; flex: 1; }
+  .wa-person {
+    display: block;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: inherit;
+  }
+  .wa-person:hover { background: #f8fafc; }
+  .wa-person.is-active { background: #e8f5e9; border-left: 3px solid #25d366; }
+
+  .wa-panel {
+    background: #fff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 72vh;
+  }
+  .wa-panel-head {
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0f2f5;
+  }
+  .wa-panel-head h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+
+  .wa-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1rem 1.5rem;
+    background-color: #e5ddd5;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35) 0 1px, transparent 2px),
+      radial-gradient(circle at 80% 40%, rgba(0,0,0,0.03) 0 1px, transparent 2px);
+    background-size: 48px 48px;
+    min-height: 480px;
+  }
+
+  .wa-row {
+    display: flex !important;
+    width: 100%;
+    margin: 0 0 0.75rem;
+    clear: both;
+  }
+  .wa-row.out { justify-content: flex-end !important; }
+  .wa-row.in  { justify-content: flex-start !important; }
+
+  .wa-bubble {
+    position: relative;
+    max-width: min(520px, 78%);
+    padding: 0.55rem 0.75rem 0.4rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+    word-wrap: break-word;
+  }
+  .wa-bubble.out {
+    background: #d9fdd3;
+    border-top-right-radius: 0;
+  }
+  .wa-bubble.in {
+    background: #ffffff;
+    border-top-left-radius: 0;
+  }
+
+  .wa-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .wa-bubble.out .wa-label { color: #1b7a3d; }
+  .wa-bubble.in  .wa-label { color: #0277bd; }
+
+  .wa-subject {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #54656f;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .wa-body {
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: #111b21;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .wa-time {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    font-size: 0.68rem;
+    color: #667781;
+  }
+
+  .wa-empty {
+    text-align: center;
+    color: #54656f;
+    background: rgba(255,255,255,0.85);
+    display: inline-block;
+    margin: 3rem auto;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+  }
+  .wa-empty-wrap { text-align: center; }
+</style>
+{% endblock %}
+{% block content %}
+<header class="ldb-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:email_inbox' %}">Email inbox</a></li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'dashboard:email_campaign' pk=campaign.pk %}">{{ campaign.name|default:campaign.smartlead_campaign_id }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ lead.email }}</li>
+      </ol>
+    </nav>
+    <h1 class="ldb-title">
+      {% if lead.first_name or lead.last_name %}
+        {{ lead.first_name }} {{ lead.last_name }}
+      {% else %}
+        {{ lead.email }}
+      {% endif %}
+    </h1>
+    <p class="ldb-sub">
+      <span class="mono">{{ lead.email }}</span>
+      · {{ campaign.name|default:campaign.smartlead_campaign_id }}
+      {% if lead.lead_record %}
+        · <a href="{% url 'dashboard:workspace' pk=lead.lead_record.workspace_id %}">Linked lead record</a>
+      {% endif %}
+    </p>
+  </div>
+</header>
+
+<div class="wa-shell">
+  <aside class="wa-people">
+    <div class="wa-people-head">People in campaign</div>
+    <div class="wa-people-list">
+      {% for s in siblings %}
+      <a href="{% url 'dashboard:email_conversation' pk=s.pk %}"
+         class="wa-person {% if s.pk == lead.pk %}is-active{% endif %}">
+        <div class="fw-semibold small">
+          {% if s.first_name or s.last_name %}{{ s.first_name }} {{ s.last_name }}{% else %}{{ s.email }}{% endif %}
+        </div>
+        <div class="text-muted" style="font-size:0.72rem">{{ s.email }}</div>
+      </a>
+      {% empty %}
+      <p class="text-muted small p-3 mb-0">No other people yet.</p>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="wa-panel">
+    <div class="wa-panel-head">
+      <h2>Conversation</h2>
+      <span class="small text-muted">{{ thread|length }} message{{ thread|length|pluralize }}</span>
+    </div>
+
+    <div class="wa-thread" id="wa-thread">
+      {% if thread %}
+        {% for msg in thread %}
+          {% if msg.direction == 'outbound' %}
+          <div class="wa-row out">
+            <div class="wa-bubble out">
+              <div class="wa-label">You · sent{% if msg.sequence_number %} · seq {{ msg.sequence_number }}{% endif %}</div>
+              {% if msg.subject %}<div class="wa-subject">{{ msg.subject }}</div>{% endif %}
+              <div class="wa-body">{% if msg.body_text %}{{ msg.body_text|linebreaksbr }}{% elif msg.body_html %}{{ msg.body_html|striptags|linebreaksbr }}{% else %}<span class="text-muted">(empty)</span>{% endif %}</div>
+              <div class="wa-time">
+                {% if msg.sent_at %}{{ msg.sent_at|date:"g:i A · M j" }}{% else %}{{ msg.created_at|date:"g:i A · M j" }}{% endif %}
+                <span title="Delivered">✓</span>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="wa-row in">
+            <div class="wa-bubble in">
+              <div class="wa-label">
+                {% if lead.first_name %}{{ lead.first_name }}{% else %}{{ lead.email }}{% endif %} · replied
+              </div>
+              {% if msg.subject %}<div class="wa-subject">{{ msg.subject }}</div>{% endif %}
+              <div class="wa-body">{% if msg.body_text %}{{ msg.body_text|linebreaksbr }}{% elif msg.body_html %}{{ msg.body_html|striptags|linebreaksbr }}{% else %}<span class="text-muted">(empty)</span>{% endif %}</div>
+              <div class="wa-time">
+                {% if msg.received_at %}{{ msg.received_at|date:"g:i A · M j" }}{% else %}{{ msg.created_at|date:"g:i A · M j" }}{% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        <div class="wa-empty-wrap"><div class="wa-empty">No messages yet for this person.</div></div>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var el = document.getElementById('wa-thread');
+  if (el) el.scrollTop = el.scrollHeight;
+})();
+</script>
+{% endblock %}

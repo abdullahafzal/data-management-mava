@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import LeadRecord, LeadSourceFile, LeadWorkspace, LeadWorkspaceAction
+from .models import (
+    LeadRecord,
+    LeadSourceFile,
+    LeadWorkspace,
+    LeadWorkspaceAction,
+    SmartleadCampaign,
+    SmartleadLead,
+    SmartleadMessage,
+    SmartleadWebhookLog,
+)
 
 
 class LeadSourceFileInline(admin.TabularInline):
@@ -47,3 +56,44 @@ class LeadWorkspaceActionAdmin(admin.ModelAdmin):
         'workspace', 'action_type', 'summary', 'record_count',
         'record_ids', 'public_ids', 'meta', 'created_at', 'undone_at', 'reverses',
     ]
+
+
+@admin.register(SmartleadCampaign)
+class SmartleadCampaignAdmin(admin.ModelAdmin):
+    list_display = ['name', 'smartlead_campaign_id', 'updated_at']
+    search_fields = ['name', 'smartlead_campaign_id']
+
+
+@admin.register(SmartleadLead)
+class SmartleadLeadAdmin(admin.ModelAdmin):
+    list_display = [
+        'email', 'first_name', 'last_name', 'campaign', 'smartlead_lead_id', 'updated_at',
+    ]
+    search_fields = ['email', 'first_name', 'last_name', 'smartlead_lead_id']
+    list_filter = ['campaign']
+    raw_id_fields = ['lead_record']
+
+
+@admin.register(SmartleadMessage)
+class SmartleadMessageAdmin(admin.ModelAdmin):
+    list_display = [
+        'event_type', 'direction', 'subject', 'from_email', 'to_email',
+        'campaign', 'sent_at', 'received_at', 'created_at',
+    ]
+    list_filter = ['event_type', 'direction', 'ghl_sync_status']
+    search_fields = [
+        'smartlead_message_id', 'subject', 'from_email', 'to_email', 'body_text',
+    ]
+    readonly_fields = ['raw_payload', 'created_at', 'updated_at']
+    raw_id_fields = ['lead', 'campaign']
+
+
+@admin.register(SmartleadWebhookLog)
+class SmartleadWebhookLogAdmin(admin.ModelAdmin):
+    list_display = [
+        'event_type', 'status', 'smartlead_message_id', 'campaign_id', 'received_at',
+    ]
+    list_filter = ['status', 'event_type']
+    search_fields = ['smartlead_message_id', 'campaign_id', 'lead_id', 'error']
+    readonly_fields = ['payload', 'received_at', 'processed_at']
+    raw_id_fields = ['message']
