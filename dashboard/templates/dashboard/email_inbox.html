@@ -1,0 +1,81 @@
+{% extends "pipeline/base.html" %}
+{% load static %}
+{% block title %}Email inbox — Smartlead{% endblock %}
+{% block extra_css %}
+<link href="{% static 'dashboard/css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<header class="ldb-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Lead databases</a></li>
+        <li class="breadcrumb-item active">Email inbox</li>
+      </ol>
+    </nav>
+    <h1 class="ldb-title">Email inbox</h1>
+    <p class="ldb-sub">Smartlead sent &amp; reply history — open a campaign, then a person, to see the chat.</p>
+  </div>
+</header>
+
+<div class="ldb-metrics">
+  <div class="ldb-metric">
+    <div class="ldb-metric-val">{{ campaigns|length }}</div>
+    <div class="ldb-metric-lbl">Campaigns</div>
+  </div>
+  <div class="ldb-metric">
+    <div class="ldb-metric-val accent">{{ total_leads }}</div>
+    <div class="ldb-metric-lbl">People</div>
+  </div>
+  <div class="ldb-metric">
+    <div class="ldb-metric-val success">{{ total_messages }}</div>
+    <div class="ldb-metric-lbl">Messages saved</div>
+  </div>
+</div>
+
+<section class="card-app">
+  <div class="card-app-header"><h2>Campaigns</h2></div>
+  <div class="card-body p-0">
+    {% if campaigns %}
+    <div class="table-responsive">
+      <table class="table table-app mb-0">
+        <thead>
+          <tr>
+            <th>Campaign</th>
+            <th>People</th>
+            <th>Sent</th>
+            <th>Replies</th>
+            <th>Last activity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ c.name|default:c.smartlead_campaign_id }}</div>
+              <div class="small text-muted mono">ID {{ c.smartlead_campaign_id }}</div>
+            </td>
+            <td>{{ c.lead_count }}</td>
+            <td><span class="sl-pill sl-pill-out">{{ c.sent_count }}</span></td>
+            <td><span class="sl-pill sl-pill-in">{{ c.reply_count }}</span></td>
+            <td class="small text-muted">
+              {% if c.last_activity %}{{ c.last_activity|timesince }} ago{% else %}—{% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'dashboard:email_campaign' pk=c.pk %}" class="btn btn-sm btn-app-primary">Open</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted p-4 mb-0">
+      No email history yet. Point Smartlead webhooks at
+      <code>/api/webhooks/smartlead/</code> and send a test email.
+    </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
