@@ -5,8 +5,6 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 db.sqlite3
-.env
-.env.*
 !.env.example
 *.egg-info/
 .eggs/
@@ -15,7 +13,6 @@ build/
 *.log
 .DS_Store
 .idea/
-.vscode/
 
 # AWS / SSH keys — never commit
 *.pem
@@ -29,3 +26,5 @@ HOSTING.local.md
 # Gunicorn socket / runtime
 *.sock
 staticfiles/
+config.bat
+node_modules
