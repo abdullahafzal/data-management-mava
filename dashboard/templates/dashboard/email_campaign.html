@@ -1,0 +1,74 @@
+{% extends "pipeline/base.html" %}
+{% load static %}
+{% block title %}{{ campaign.name }} — Email{% endblock %}
+{% block extra_css %}
+<link href="{% static 'dashboard/css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<header class="ldb-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:email_inbox' %}">Email inbox</a></li>
+        <li class="breadcrumb-item active">{{ campaign.name|default:campaign.smartlead_campaign_id }}</li>
+      </ol>
+    </nav>
+    <h1 class="ldb-title">{{ campaign.name|default:campaign.smartlead_campaign_id }}</h1>
+    <p class="ldb-sub">Click a person to open the conversation like a chat.</p>
+  </div>
+  <div class="ldb-actions">
+    <form method="get" class="d-flex gap-2">
+      <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search name or email…" style="min-width:220px">
+      <button type="submit" class="btn btn-outline-secondary">Search</button>
+    </form>
+  </div>
+</header>
+
+<section class="card-app">
+  <div class="card-app-header"><h2>People ({{ leads|length }})</h2></div>
+  <div class="card-body p-0">
+    {% if leads %}
+    <div class="table-responsive">
+      <table class="table table-app mb-0">
+        <thead>
+          <tr>
+            <th>Person</th>
+            <th>Email</th>
+            <th>Sent</th>
+            <th>Replies</th>
+            <th>Last activity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+          <tr>
+            <td class="fw-semibold">
+              {% if lead.first_name or lead.last_name %}
+                {{ lead.first_name }} {{ lead.last_name }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="mono small">{{ lead.email }}</td>
+            <td><span class="sl-pill sl-pill-out">{{ lead.sent_count }}</span></td>
+            <td><span class="sl-pill sl-pill-in">{{ lead.reply_count }}</span></td>
+            <td class="small text-muted">
+              {% if lead.last_activity %}{{ lead.last_activity|timesince }} ago{% else %}—{% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'dashboard:email_conversation' pk=lead.pk %}" class="btn btn-sm btn-app-primary">
+                Open chat
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted p-4 mb-0">No people in this campaign yet{% if q %} matching “{{ q }}”{% endif %}.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

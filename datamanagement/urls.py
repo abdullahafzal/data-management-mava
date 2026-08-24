@@ -19,8 +19,16 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from dashboard.webhook_views import SmartleadWebhookView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Smartlead → our backend (use with ngrok HTTPS while unhosted)
+    path(
+        'api/webhooks/smartlead/',
+        SmartleadWebhookView.as_view(),
+        name='smartlead_webhook',
+    ),
     path('dashboard/', include('dashboard.urls')),
     path('registry/', include('registry.urls')),
     path('automation/', include('automation.urls')),
